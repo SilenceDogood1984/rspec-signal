@@ -77,4 +77,34 @@ RSpec.describe "exception causes" do
   it "adds nothing when there is no cause" do
     expect(build(raised(RuntimeError, "plain", Backtraces.pure_ruby)).message.text).not_to include("Caused by")
   end
+
+  # The line budget exists to keep a verbose wrapper message from bloating the
+  # report; it must never be the reason the actual root cause disappears.
+  it "keeps the cause visible even when the wrapper message alone exceeds the line budget" do
+    huge_message_lines = Array.new(40) { |i| "Failure/Error line #{i} of a very long wrapper message" }
+
+    body = build(wrapper, message_lines: huge_message_lines).message.body(max_lines: 30, max_diff_lines: 20)
+
+    expect(body).to include("[10 more message lines omitted]")
+    expect(body.join("\n")).to include("Caused by ArgumentError:",
+                                       "duplicate key value violates unique constraint")
+  end
+
+  # Reproduces the exact failure mode the fingerprint is meant to prevent:
+  # two failures whose wrapper text is identical (and long enough to be
+  # truncated) must still separate on the cause that actually differs.
+  it "does not collapse two identical long wrapper messages with different causes into one signature" do
+    huge_message_lines = Array.new(60) { "the exact same repeated wrapper line of padding text" }
+    cause_a = raised(ArgumentError, 'duplicate key value violates unique constraint "index_users_on_email"',
+                     Backtraces.active_record_invalid)
+    cause_b = raised(ArgumentError, "connection reset by peer while contacting redis", Backtraces.active_record_invalid)
+    wrapper_a = raised(RuntimeError, "could not create the subscription", Backtraces.pure_ruby, cause: cause_a)
+    wrapper_b = raised(RuntimeError, "could not create the subscription", Backtraces.pure_ruby, cause: cause_b)
+
+    failure_a = build(wrapper_a, message_lines: huge_message_lines)
+    failure_b = build(wrapper_b, message_lines: huge_message_lines)
+
+    expect(failure_a.fingerprint.digest).not_to eq(failure_b.fingerprint.digest)
+    expect(RSpec::Signal::Grouper.call([failure_a, failure_b]).size).to eq(2)
+  end
 end

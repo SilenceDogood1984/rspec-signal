@@ -58,6 +58,15 @@ RSpec.describe RSpec::Signal::Message do
       expect(body.count { |line| line.start_with?("-  row") }).to eq(7)
       expect(body.last).to include("more message lines omitted")
     end
+
+    it "keeps the cause chain even when the wrapper message alone exceeds the line budget" do
+      huge = Array.new(100) { |i| "line #{i}" }
+      cause = ["", "Caused by ArgumentError:", "  duplicate key value violates a constraint"]
+      body = build_message(huge, cause_lines: cause).body(max_lines: 10)
+
+      expect(body).to include("[90 more message lines omitted]")
+      expect(body.last(2)).to eq(["Caused by ArgumentError:", "  duplicate key value violates a constraint"])
+    end
   end
 
   describe "#normalized" do
@@ -90,6 +99,18 @@ RSpec.describe RSpec::Signal::Message do
 
     it "is bounded in length" do
       expect(normalized("x" * 5000).length).to be <= described_class::MAX_FINGERPRINT_CHARS
+    end
+
+    it "keeps the cause distinguishable even once the main text is truncated" do
+      huge = ["x" * 5000]
+
+      with_cause_a = build_message(huge, cause_lines: ["Caused by ArgumentError:", "  connection reset"]).normalized
+      with_cause_b = build_message(huge, cause_lines: ["Caused by ArgumentError:", "  constraint violated"]).normalized
+      without_cause = build_message(huge).normalized
+
+      expect(with_cause_a).not_to eq(with_cause_b)
+      expect(with_cause_a).not_to eq(without_cause)
+      expect(with_cause_a).to start_with(without_cause)
     end
   end
 

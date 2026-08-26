@@ -179,8 +179,8 @@ tmp/rspec-signal/workers/<run-id>/<test-process-number>/signal.json
 
 After `parallel_rspec` returns, the parent reads those worker files, reconstructs all
 failures, and performs exact grouping and related-failure clustering globally. It then
-writes the usual top-level `signal.md`, `summary.md`, and `signal.json` (subject to the
-normal artifact configuration). Thus identical or related failures in different
+writes the usual top-level `signal.md` and `signal.json` (subject to the normal
+artifact configuration). Thus identical or related failures in different
 partitions appear together in the final report. If `write_full` is enabled, the parent
 deterministically builds one top-level `full.txt` from the worker payloads; workers
 never share that file.
@@ -192,10 +192,12 @@ aggregation with a concise error, which usually indicates conditional configurat
 the project's spec helper.
 
 Each run has a new ID and the merger only reads paths registered for that invocation,
-so abandoned or stale worker reports cannot enter a later report. The worker
-directories remain available for diagnosis. Missing registered artifacts and merge
-errors produce concise warnings. A merge error makes an otherwise successful command
-fail, while a failing `parallel_rspec` status is always preserved.
+so abandoned or stale worker reports cannot enter a later report. Once a run's worker
+payloads have been merged into the top-level report, that run's worker directory is
+removed; a run whose merge fails leaves its worker directory in place for diagnosis.
+Missing registered artifacts and merge errors produce concise warnings. A merge error
+makes an otherwise successful command fail, while a failing `parallel_rspec` status is
+always preserved.
 
 This first implementation supports local filesystem execution through
 `parallel_tests`. Other parallel RSpec runners, multiple hosts, and distributed CI
@@ -243,7 +245,6 @@ claude "fix the failures in tmp/rspec-signal/signal.md"
 ```text
 tmp/rspec-signal/
   signal.md    primary compact report -- hand this to the agent
-  summary.md   compatibility copy for integrations created before signal.md
   signal.json  the same data, machine readable, for CI and tooling
                (`signatures` and `related` mirror the two grouping layers)
   full.txt     optional original output; off by default
@@ -516,7 +517,6 @@ RSpec::Signal.configure do |config|
   config.extra_first_party = ["../billing-engine"]   # a sibling checkout
   config.ignore_patterns   << %r{/lib/my_test_harness/}  # your code, but plumbing
   config.framework_patterns << /vendor_test_runner-/     # a gem, but plumbing
-  config.spec_patterns     << %r{\Aexamples/}            # where your specs live
 
   # Capybara.
   config.capture_capybara  = true
@@ -602,9 +602,15 @@ everything with `config.redaction_filter`, or turn scrubbing off with
   stream, which a formatter cannot subscribe to without swallowing every other
   message. `rspec-signal` reports the count and says where to look, but cannot
   capture the text.
-- **Parallel test runners.** Under `parallel_tests`, `knapsack` or similar, each
-  process writes to the same directory and the last one wins. Give each process its
-  own via `RSPEC_SIGNAL_OUTPUT_DIR=tmp/rspec-signal-$TEST_ENV_NUMBER`.
+- **Parallel test runners.** Use `rspec-signal-parallel` for suites launched with
+  `parallel_tests` (see [Parallel suites](#parallel-suites-parallel_tests)); it isolates
+  each worker and merges the results deterministically. Do not set a per-worker
+  `RSPEC_SIGNAL_OUTPUT_DIR` with the wrapper -- it requires every worker to report the
+  same configuration and fails the merge if the output directory differs between them.
+  Running `parallel_rspec` directly, with the gem only required from `spec_helper.rb`
+  and no wrapper, is not supported: every worker writes to the same `signal.md` with a
+  non-atomic write, and a worker that finishes green can delete a sibling worker's
+  still-relevant report.
 - **Grouping is a heuristic.** It is deterministic and explained above, but two
   genuinely different bugs that raise the same exception with the same message from
   the same line will collapse into one signature. The affected-example list always

@@ -20,7 +20,7 @@ RSpec.describe "parallel_tests support", :integration do
     expect(run.status).not_to eq(0)
     expect(project.json.dig("summary", "examples")).to eq(3)
     expect(project.json.fetch("signatures").map { |group| group.fetch("count") }).to contain_exactly(2, 1)
-    expect(worker_artifacts.size).to eq(3)
+    expect(worker_artifacts).to be_empty
   end
 
   it "clusters related but non-identical failures from separate workers" do
@@ -117,6 +117,38 @@ RSpec.describe "parallel_tests support", :integration do
     expect(run.status).to eq(0)
     expect(run.output).to include("2 examples, 0 failures across 2 workers")
     expect(project).not_to be_artifact("signal.md")
+  end
+
+  # Worker payloads are per-run interchange data, not a durable artifact: once
+  # merged into the top-level report they have no reason to keep occupying
+  # the project, whether or not the suite itself is green.
+  it "removes worker artifacts once a failing run has been merged" do
+    write_shared_failure
+    write_failure("a", "shared failure")
+    write_failure("b", "shared failure")
+
+    project.run_signal_parallel("-n", "2", "spec")
+
+    expect(worker_artifacts).to be_empty
+  end
+
+  it "removes worker artifacts once a passing run has been merged" do
+    2.times { |index| write_passing(index) }
+
+    project.run_signal_parallel("-n", "2", "spec")
+
+    expect(worker_artifacts).to be_empty
+  end
+
+  it "leaves worker artifacts in place when aggregation itself fails" do
+    install_artifact_sabotage
+    write_passing(1)
+    write_passing(2)
+
+    run = project.run_signal_parallel("-n", "2", "spec", env: { "SIGNAL_ARTIFACT_SABOTAGE" => "corrupt" })
+
+    expect(run.status).not_to eq(0)
+    expect(worker_artifacts).not_to be_empty
   end
 
   def write_shared_failure

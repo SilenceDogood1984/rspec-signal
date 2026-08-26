@@ -11,10 +11,9 @@ module RSpec
     # fixed.
     class Writer
       SIGNAL   = "signal.md"
-      SUMMARY  = "summary.md"
       JSON     = "signal.json"
       FULL     = "full.txt"
-      MANAGED  = [SIGNAL, SUMMARY, JSON, FULL].freeze
+      MANAGED  = [SIGNAL, JSON, FULL].freeze
 
       Result = Struct.new(:summary_path, :written, :cleaned, keyword_init: true)
 
@@ -31,7 +30,7 @@ module RSpec
         write_gitignore
 
         markdown = Reporters::Markdown.new(report, @config).render
-        written = write_markdown(markdown)
+        written = [write_file(SIGNAL, markdown)]
         written.concat(optional_artifacts(report))
 
         stale = MANAGED - written.map { |path| File.basename(path) }
@@ -46,12 +45,6 @@ module RSpec
       end
 
       private
-
-      def write_markdown(markdown)
-        # Cheap compatibility for users and CI jobs created before signal.md
-        # became the primary agent-facing artifact.
-        [write_file(SIGNAL, markdown), write_file(SUMMARY, markdown)]
-      end
 
       def optional_artifacts(report)
         written = []

@@ -18,8 +18,7 @@ Initial release.
   normal top-level artifacts without changing the parallel test exit status.
 - Opt-in quiet agent mode through `--format RSpec::Signal::Formatter`, preserving
   RSpec exit status while suppressing verbose failure rendering.
-- `signal.md` as the primary Markdown artifact, with `summary.md` retained as a
-  compatibility copy and `full.txt` opt-in.
+- `signal.md` as the primary and sole Markdown artifact, with `full.txt` opt-in.
 - Generic `expected`/`got` HTTP status mismatch recognition when the failing
   expression explicitly reads `response.status`.
 
@@ -49,7 +48,7 @@ Initial release.
   adjacent to them, and never produces an empty trace.
 - Deterministic failure fingerprinting and grouping on exception class,
   normalized message, culprit frame and application context.
-- Artifacts in `tmp/rspec-signal/`: `summary.md`, `signal.json`, `full.txt`, and a
+- Artifacts in `tmp/rspec-signal/`: `signal.md`, `signal.json`, `full.txt`, and a
   `.gitignore`. Artifacts are removed when a run has no failures.
 - Exception `cause` chains folded into the failure message, including the
   first-party frame each cause came from.

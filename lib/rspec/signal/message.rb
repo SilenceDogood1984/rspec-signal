@@ -33,21 +33,30 @@ module RSpec
       # markup is short enough to read, and reading it is the point.
       DEFAULT_HTML_THRESHOLD = 1_500
 
-      attr_reader :lines
+      attr_reader :lines, :cause_lines
 
       # @param lines [Array<String>] message lines as RSpec presents them
       # @param redactor [Redactor]
       # @param project [Project]
       # @param html_threshold [Integer, nil] nil disables HTML reduction
-      def initialize(lines, redactor:, project:, html_threshold: DEFAULT_HTML_THRESHOLD)
+      # @param cause_lines [Array<String>] the `Caused by ...` chain, already
+      #   bounded by {FailureBuilder} -- kept apart from `lines` so neither the
+      #   line budget in {#body} nor the character budget in {#normalized} can
+      #   push it out. It is very often the actual answer.
+      def initialize(lines, redactor:, project:, html_threshold: DEFAULT_HTML_THRESHOLD, cause_lines: [])
         @redactor = redactor
         @project = project
         @lines = trim(squeeze(reduce_html(normalize(lines), html_threshold)))
+        @cause_lines = trim(squeeze(reduce_html(normalize(cause_lines), html_threshold)))
       end
 
-      def empty? = @lines.all?(&:empty?)
+      def empty? = @lines.all?(&:empty?) && @cause_lines.all?(&:empty?)
 
-      def text = @lines.join("\n")
+      def text
+        return @lines.join("\n") if @cause_lines.empty?
+
+        "#{@lines.join("\n")}\n\n#{@cause_lines.join("\n")}"
+      end
 
       # First meaningful line, for headings and one-line summaries.
       def headline(limit = 160)
@@ -59,8 +68,31 @@ module RSpec
       # The message body for the report, with oversized diffs trimmed.
       #
       # Diffs are the single biggest source of bloat in RSpec output, and the
-      # first lines of a diff almost always carry the signal.
+      # first lines of a diff almost always carry the signal. The cause chain
+      # is appended after truncation, never counted against `max_lines`: a
+      # verbose wrapper message must not be able to push the root cause out.
       def body(max_lines: 30, max_diff_lines: 20)
+        kept = truncated_lines(max_lines: max_lines, max_diff_lines: max_diff_lines)
+        return kept if @cause_lines.empty?
+
+        kept + ["", *@cause_lines]
+      end
+
+      # Stable form used for fingerprinting. The cause chain is appended after
+      # the main text is truncated to `MAX_FINGERPRINT_CHARS`, so two
+      # otherwise-identical wrapper messages with different causes never
+      # collapse into one signature just because the wrapper is long.
+      def normalized
+        @normalized ||= begin
+          main = truncate(normalize_for_fingerprint(@lines.join(" ")), MAX_FINGERPRINT_CHARS)
+          cause = normalize_for_fingerprint(@cause_lines.join(" "))
+          cause.empty? ? main : "#{main} #{cause}"
+        end
+      end
+
+      private
+
+      def truncated_lines(max_lines:, max_diff_lines:)
         kept = []
         diff_seen = 0
         in_diff = false
@@ -80,18 +112,12 @@ module RSpec
         kept
       end
 
-      # Stable form used for fingerprinting.
-      def normalized
-        @normalized ||= begin
-          text = @lines.join(" ")
-          text = @project.relative_to_root(text) if text.include?(@project.root)
-          text = text.gsub(@project.root, ".")
-          NORMALIZERS.each { |(pattern, replacement)| text = text.gsub(pattern, replacement) }
-          truncate(text.gsub(/\s+/, " ").strip, MAX_FINGERPRINT_CHARS)
-        end
+      def normalize_for_fingerprint(text)
+        text = @project.relative_to_root(text) if text.include?(@project.root)
+        text = text.gsub(@project.root, ".")
+        NORMALIZERS.each { |(pattern, replacement)| text = text.gsub(pattern, replacement) }
+        text.gsub(/\s+/, " ").strip
       end
-
-      private
 
       # Reduction happens once, here, so that every later stage -- the body,
       # the headline in the index table, and the fingerprint -- sees the

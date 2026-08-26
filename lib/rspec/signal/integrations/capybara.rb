@@ -18,7 +18,10 @@ module RSpec
         module_function
 
         def install!(rspec_config, signal_config)
-          rspec_config.after(:each) do |example|
+          # `prepend_after` so this runs *before* any example-group-level
+          # `after(:each)` hook -- rspec-rails tears the Capybara session down
+          # at that level, and capturing after teardown would find nothing.
+          rspec_config.prepend_after(:each) do |example|
             RSpec::Signal::Integrations::Capybara.capture(example, signal_config)
           end
         end

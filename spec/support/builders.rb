@@ -23,9 +23,9 @@ module Builders
     config.reducer.call(parse_frames(backtrace, config: config))
   end
 
-  def build_message(lines, config: signal_config)
+  def build_message(lines, config: signal_config, cause_lines: [])
     RSpec::Signal::Message.new(Array(lines), redactor: config.redactor, project: config.project,
-                                             html_threshold: config.html_threshold)
+                                             html_threshold: config.html_threshold, cause_lines: cause_lines)
   end
 
   # Builds a {RSpec::Signal::Failure} the same way {RSpec::Signal::FailureBuilder}

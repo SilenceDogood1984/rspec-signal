@@ -21,8 +21,8 @@ RSpec.describe RSpec::Signal::Writer do
       expect(contents("signal.md")).to include("Capybara::ElementNotFound")
     end
 
-    it "keeps summary.md as a compatibility copy" do
-      expect(contents("summary.md")).to eq(contents("signal.md"))
+    it "does not write a summary.md copy" do
+      expect(File).not_to exist(File.join(writer.dir, "summary.md"))
     end
 
     it "returns the summary path" do
@@ -78,7 +78,7 @@ RSpec.describe RSpec::Signal::Writer do
       expect(File).not_to exist(File.join(writer.dir, "signal.md"))
       expect(File).not_to exist(File.join(writer.dir, "signal.json"))
       expect(result.summary_path).to be_nil
-      expect(result.cleaned.size).to eq(3)
+      expect(result.cleaned.size).to eq(2)
     end
 
     it "still writes a report when the suite broke outside of any example" do

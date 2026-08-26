@@ -42,18 +42,14 @@ class SandboxProject
     RUBY
   end
 
-  # `spec` is passed explicitly rather than relying on the default path: with
-  # `--require` and no file arguments the runner finds nothing.
   def run(*args)
-    args = [*args, "spec"] unless args.any? { |arg| arg.to_s.start_with?("spec") }
-    command = [RbConfig.ruby, "-r", "rspec/core", "-e", "RSpec::Core::Runner.invoke",
-               "--", "--require", "./spec/spec_helper.rb", "--no-color", *args]
+    command = [RbConfig.ruby, Gem.bin_path("rspec-core", "rspec"),
+               "--require", "./spec/spec_helper.rb", "--no-color", *args]
     stdout, stderr, status = Open3.capture3({ "RSPEC_SIGNAL_DISABLE" => nil }, *command, chdir: root)
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 
   def run_signal(*args)
-    args = [*args, "spec"] unless args.any? { |arg| arg.to_s.start_with?("spec") }
     env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }
     stdout, stderr, status = Open3.capture3(
       env, RbConfig.ruby, EXECUTABLE, "--require", "./spec/spec_helper.rb", "--no-color", *args, chdir: root
@@ -65,6 +61,8 @@ class SandboxProject
   def artifact?(name) = File.file?(artifact(name))
   def read(name) = File.read(artifact(name))
   def json = JSON.parse(read("signal.json"))
+  def recorded_examples = File.readlines(File.join(root, "executed.txt"), chomp: true)
+  def clear_recorded_examples = FileUtils.rm_f(File.join(root, "executed.txt"))
 
   def cleanup = FileUtils.rm_rf(root)
 

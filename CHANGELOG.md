@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `rspec-signal-parallel`, a quiet `parallel_tests` wrapper that isolates
+  worker JSON by run and test-process number, then globally merges failures into
+  the normal top-level artifacts without changing the parallel test exit status.
+
+## Unreleased
+
 - Add opt-in quiet agent mode through `--format RSpec::Signal::Formatter`, preserving RSpec exit status while suppressing verbose failure rendering.
 - Make `signal.md` the primary Markdown artifact, retain `summary.md` as a compatibility copy, and make `full.txt` opt-in.
 - Recognize generic `expected`/`got` HTTP status mismatches when the failing expression explicitly reads `response.status`.

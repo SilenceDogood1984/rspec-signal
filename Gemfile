@@ -7,6 +7,7 @@ gemspec
 gem "rake", "~> 13.0"
 gem "rubocop", "~> 1.66"
 gem "rubocop-rspec", "~> 3.0"
+gem "parallel_tests", ">= 4.0", group: %i[development test]
 
 # CI pins this to check the oldest supported RSpec as well as the newest.
 rspec_version = ENV.fetch("RSPEC_VERSION", nil)

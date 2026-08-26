@@ -63,8 +63,12 @@ module RSpec
       def close(_notification)
         return unless config.enabled?
 
-        result = writer.write(report)
-        print_summary(result)
+        if ParallelRun.worker?
+          ParallelRun.write_worker(report, config)
+        else
+          result = writer.write(report)
+          print_summary(result)
+        end
       rescue StandardError => e
         record_error(e)
       ensure

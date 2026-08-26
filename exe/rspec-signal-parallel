@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+require "securerandom"
+require "tmpdir"
+
+begin
+  parallel_rspec = Gem.bin_path("parallel_tests", "parallel_rspec")
+rescue Gem::GemNotFoundException
+  warn "rspec-signal: parallel_tests is required; add gem \"parallel_tests\" to your test bundle"
+  exit 2
+end
+
+run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(6)}"
+registry = Dir.mktmpdir("rspec-signal-#{run_id}")
+lib = File.expand_path("../lib", __dir__)
+ENV["RUBYLIB"] = [lib, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR)
+ENV["RSPEC_SIGNAL_RUN_ID"] = run_id
+ENV["RSPEC_SIGNAL_RUN_REGISTRY"] = registry
+ENV["RSPEC_SIGNAL_QUIET"] = "1"
+ENV["PARALLEL_TEST_FIRST_IS_1"] = "true"
+ENV["SPEC_OPTS"] = [ENV.fetch("SPEC_OPTS", nil), "--require rspec/signal --format RSpec::Signal::Formatter"].compact.join(" ")
+
+system(Gem.ruby, parallel_rspec, *ARGV)
+test_status = $?.exitstatus || 1
+
+begin
+  require "rspec/signal"
+  result = RSpec::Signal::ParallelMerger.new(registry: registry).call
+  report = result.report
+  puts
+  puts "#{report.example_count} examples, #{report.failure_count} failures across #{result.workers} workers"
+  puts "rspec-signal: #{report.group_count} exact signatures, #{report.cluster_count} related clusters, " \
+       "#{report.omitted_frames} backtrace frames omitted"
+  if result.write_result.summary_path
+    puts "Report: #{RSpec::Signal::Writer.new(RSpec::Signal.configuration).relative(result.write_result.summary_path)}"
+  end
+  warn "rspec-signal: warning: #{result.missing.size} worker artifacts were missing" if result.missing.any?
+rescue StandardError => e
+  warn "rspec-signal: parallel report aggregation failed (#{e.class}: #{e.message})"
+  test_status = 1 if test_status.zero?
+ensure
+  FileUtils.rm_rf(registry)
+end
+
+exit test_status

@@ -155,6 +155,47 @@ the agent reads signal.md
 the agent reruns individual failures from the report as needed
 ```
 
+### Parallel suites (`parallel_tests`)
+
+For suites normally launched with `parallel_rspec`, use the dedicated wrapper:
+
+```bash
+bundle exec rspec-signal-parallel spec -n 8
+```
+
+All arguments are forwarded unchanged to `parallel_rspec`, so its file selection,
+process-count, grouping, and runtime-log options continue to work. The wrapper adds
+Signal as the quiet RSpec formatter through `SPEC_OPTS`; individual workers therefore
+do not print failure bodies or backtraces. `parallel_tests` may still print its own
+bounded process and progress output.
+
+The wrapper gives every invocation a random run ID. Workers use
+`TEST_ENV_NUMBER` (with the first process numbered `1`) and write structured files to:
+
+```text
+tmp/rspec-signal/workers/<run-id>/<test-process-number>/signal.json
+```
+
+After `parallel_rspec` returns, the parent reads those worker files, reconstructs all
+failures, and performs exact grouping and related-failure clustering globally. It then
+writes the usual top-level `signal.md`, `summary.md`, and `signal.json` (subject to the
+normal artifact configuration). Thus identical or related failures in different
+partitions appear together in the final report. If `write_full` is enabled, the parent
+deterministically builds one top-level `full.txt` from the worker payloads; workers
+never share that file.
+
+Each run has a new ID and the merger only reads paths registered for that invocation,
+so abandoned or stale worker reports cannot enter a later report. The worker
+directories remain available for diagnosis. Missing registered artifacts and merge
+errors produce concise warnings. A merge error makes an otherwise successful command
+fail, while a failing `parallel_rspec` status is always preserved.
+
+This first implementation supports local filesystem execution through
+`parallel_tests`. Other parallel RSpec runners, multiple hosts, and distributed CI
+workers are not yet guaranteed. Add `parallel_tests` to the application's test bundle;
+it is deliberately a development/test dependency of this gem rather than a runtime
+dependency.
+
 A quiet failing run ends with output like:
 
 ```text

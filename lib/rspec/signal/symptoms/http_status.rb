@@ -45,8 +45,12 @@ module RSpec
 
         module_function
 
-        def call(_failure, text)
+        GENERIC_EXPECTATION = /expected:\s*(?<expected>\d{3})\s+got:\s*(?<actual>\d{3})/i
+        STATUS_EXPRESSION = /(?:response\s*\.\s*status|response\s*\.\s*status_code|response\s*\[\s*:status\s*\])/i
+
+        def call(failure, text)
           match = PATTERNS.filter_map { |pattern| pattern.match(text) }.first
+          match ||= generic_expectation(failure, text)
           return nil unless match
 
           actual = code(match[:actual])
@@ -54,6 +58,16 @@ module RSpec
 
           Symptom.new(kind: :http_status, key: "http-status:#{actual}", label: label(actual),
                       detail: "expected #{token(match[:expected])}, got #{actual}")
+        end
+
+        # RSpec's generic equality matcher does not mention HTTP in its
+        # expected/got lines. Only accept it when the captured failing
+        # expression explicitly reads a response status, avoiding arbitrary
+        # three-digit numeric comparisons.
+        def generic_expectation(failure, text)
+          return nil unless STATUS_EXPRESSION.match?(failure.message.text.to_s)
+
+          GENERIC_EXPECTATION.match(text)
         end
 
         def label(actual)

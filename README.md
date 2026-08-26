@@ -12,10 +12,10 @@ reaches a single line of your code — and you pay that cost forty-three times o
 even when all forty-three failures are one bug.
 
 `rspec-signal` is a deterministic context-reduction layer between RSpec and a coding
-agent. It writes `tmp/rspec-signal/summary.md`: a compact, model-neutral report you
+agent. It writes `tmp/rspec-signal/signal.md`: a compact, model-neutral report you
 can paste into any assistant or point an agent at.
 
-It is not a prettier formatter. Your terminal output stays exactly as it was.
+In normal mode your terminal output stays as it was. In opt-in agent mode it also becomes a quiet formatter that prevents verbose failures from entering an autonomous agent's context.
 
 ---
 
@@ -124,60 +124,95 @@ If you would rather be explicit, or you need it only in CI, skip the require and
 name the formatter instead:
 
 ```bash
-bundle exec rspec --format progress --format RSpec::Signal::Formatter
+bundle exec rspec --require rspec/signal --format progress --format RSpec::Signal::Formatter
 ```
 
-RSpec resolves `--format` names to constants, so `--format signal` is not something
-RSpec can do for a third-party gem. That is why the require-based install exists.
+## Autonomous-agent workflow (quiet mode)
 
-## Usage
+Run the gem's quiet wrapper for an autonomous agent. It forwards every argument to
+RSpec and exits with RSpec's status:
 
-Run your specs as you always do:
+```bash
+bundle exec rspec-signal
+bundle exec rspec-signal spec/models/user_spec.rb:42
+```
+
+The wrapper selects Signal as RSpec's only formatter, so no progress or verbose
+failure formatter is added and stdout stays bounded while RSpec still runs every
+example. A failing suite remains non-zero; a passing suite remains zero. The
+low-level `bundle exec rspec --format RSpec::Signal::Formatter` interface remains
+available after requiring `rspec/signal` from the spec helper.
+
+```text
+RSpec runs the full suite
+↓
+verbose failure bodies and framework backtraces are not printed
+↓
+rspec-signal writes tmp/rspec-signal/signal.md
+↓
+the agent reads signal.md
+↓
+the agent reruns individual failures from the report as needed
+```
+
+A quiet failing run ends with output like:
+
+```text
+2085 examples, 42 failures, 6 pending
+
+rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters (2767 backtrace frames omitted)
+Report: tmp/rspec-signal/signal.md
+```
+
+### Human and CI modes
+
+For a human, run RSpec normally:
 
 ```bash
 bundle exec rspec
 ```
 
-At the end you get two extra lines:
+Requiring the gem auto-installs its collector and restores RSpec's default formatter.
+Normal progress, failure bodies, backtraces, and summary remain visible, followed by
+the short rspec-signal artifact notice. This preserves existing behavior.
 
-```text
-936 examples, 43 failures
+For CI, choose deliberately: use normal mode when logs are the primary diagnostic,
+or use the quiet formatter above when `signal.md` and `signal.json` are uploaded as
+artifacts. In both modes RSpec owns the process status and test execution semantics.
 
-rspec-signal: 43 failures in 7 distinct signatures (1842 backtrace frames omitted)
-AI report: tmp/rspec-signal/summary.md
-```
-
-Then hand the file to an agent:
+Then hand the primary artifact to an agent, for example:
 
 ```bash
-claude "fix the failures in tmp/rspec-signal/summary.md"
+claude "fix the failures in tmp/rspec-signal/signal.md"
 ```
-
-Or paste its contents into any chat. The report contains no instructions to a model
-— it is a diagnostic document, so it reads the same to Claude, Codex, Cursor, or a
-human.
 
 ## Generated artifacts
 
 ```text
 tmp/rspec-signal/
-  summary.md    the report -- this is the one you hand over
-  signal.json   the same data, machine readable, for CI and tooling
-                (`signatures` and `related` mirror the two grouping layers)
-  full.txt      the original unreduced RSpec output, kept as an escape hatch
-  .gitignore    written automatically; artifacts can contain application data
+  signal.md    primary compact report -- hand this to the agent
+  summary.md   compatibility copy for integrations created before signal.md
+  signal.json  the same data, machine readable, for CI and tooling
+               (`signatures` and `related` mirror the two grouping layers)
+  full.txt     optional original output; off by default
+  .gitignore   written automatically; artifacts can contain application data
 ```
 
 A run with **no** failures deletes these files. A stale report describing failures
 you already fixed is worse than no report at all, because an agent will go and
 "fix" them again.
 
-`full.txt` exists so reduction is never lossy in practice. If the compact report
-ever drops the one frame you needed, the original is in the same directory. Turn
-it off with `config.write_full = false`.
+The large `full.txt` artifact is off by default. Enable it only when you need the
+original unreduced formatter rendering:
+
+```ruby
+RSpec::Signal.configure do |config|
+  config.write_full = true
+end
+```
 
 Individual per-failure files are deliberately **not** written. With failures
-collapsed into a handful of signatures, `summary.md` is already the unit you want
+collapsed into a handful of signatures, `signal.md` is already the unit you want
 to paste, and a directory of near-duplicate fragments is just more to sift through.
 
 ## Filtering philosophy
@@ -376,7 +411,7 @@ expected [HTML document] to include "You've finished this document."
   default 1500 characters).
 - No DOM parser, and no new dependency: regex only. It never has to be correct, only
   useful, and it is handed broken markup by definition.
-- The untouched original is still written verbatim to `full.txt`.
+- If `write_full` is enabled, the untouched original is written to `full.txt`.
 
 ## Configuration
 
@@ -529,7 +564,7 @@ everything with `config.redaction_filter`, or turn scrubbing off with
 - **HTML reduction reads markup with regexes.** It extracts the title, headings and
   leading text of a page; it does not understand the page. A response whose useful
   content is buried deep in the body will be summarised as an HTML document and
-  little more. `full.txt` still has all of it.
+  little more. Enable `write_full` temporarily if you need the original markup.
 - **No source packaging.** `rspec-signal` names files and lines; it does not embed
   source code. Agents working inside a repository can open the files themselves, and
   in v1 that is a better division of labour than guessing which snippets to inline.
@@ -554,7 +589,7 @@ bundle exec rubocop
 ```
 
 The test suite runs `rspec-signal` on itself, so a failing run writes its own
-report to `tmp/rspec-signal/summary.md`.
+report to `tmp/rspec-signal/signal.md`.
 
 Most of the gem is plain Ruby with no RSpec dependency. Only `Formatter` and
 `FailureBuilder` touch RSpec's notification API, which is what lets the reduction,

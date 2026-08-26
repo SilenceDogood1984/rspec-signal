@@ -8,8 +8,9 @@ module RSpec
     # The RSpec formatter. Collects failures as they happen, then writes the
     # artifacts once the run is over.
     #
-    # It prints almost nothing itself: your usual formatter keeps giving you
-    # normal terminal feedback, and this adds two lines at the end.
+    # When selected explicitly it is the only formatter, suppressing RSpec's
+    # verbose failure renderer. When auto-installed it restores the default
+    # formatter so requiring the gem does not change normal human output.
     class Formatter
       ::RSpec::Core::Formatters.register self, :start, :example_failed, :dump_summary, :seed, :close
 
@@ -29,7 +30,7 @@ module RSpec
       def start(_notification)
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
-        RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed?
+        RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
       end
 
       def example_failed(notification)
@@ -97,14 +98,21 @@ module RSpec
 
         current = report
         @output.puts
+        print_rspec_summary(current) if RSpec::Signal.quiet_mode?
         @output.puts "rspec-signal: #{current.failure_count} " \
                      "#{current.failure_count == 1 ? "failure" : "failures"} in " \
                      "#{current.group_count} distinct " \
                      "#{current.group_count == 1 ? "signature" : "signatures"}" \
                      "#{cluster_note(current)}#{omission_note(current)}"
-        @output.puts "AI report: #{writer.relative(result.summary_path)}" if result.summary_path
+        @output.puts "Report: #{writer.relative(result.summary_path)}" if result.summary_path
       rescue StandardError => e
         record_error(e)
+      end
+
+      def print_rspec_summary(current)
+        @output.puts "#{current.example_count} examples, #{current.failure_count} failures, " \
+                     "#{current.pending_count} pending"
+        @output.puts
       end
 
       def cluster_note(current)

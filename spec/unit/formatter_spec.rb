@@ -42,12 +42,12 @@ RSpec.describe RSpec::Signal::Formatter do
     before { drive(failure_notification, failure_notification(message: "different")) }
 
     it "writes the report" do
-      expect(File).to exist(File.join(config.output_path, "summary.md"))
+      expect(File).to exist(File.join(config.output_path, "signal.md"))
     end
 
     it "prints a two-line terminal summary" do
       expect(output.string).to include("rspec-signal: 2 failures in 2 distinct signatures")
-      expect(output.string).to include("AI report:")
+      expect(output.string).to include("Report:")
     end
 
     it "reports the reduction it achieved" do
@@ -55,7 +55,7 @@ RSpec.describe RSpec::Signal::Formatter do
     end
 
     it "carries the seed into the report" do
-      expect(File.read(File.join(config.output_path, "summary.md"))).to include("seed `1234`")
+      expect(File.read(File.join(config.output_path, "signal.md"))).to include("seed `1234`")
     end
   end
 
@@ -63,7 +63,7 @@ RSpec.describe RSpec::Signal::Formatter do
     before { drive }
 
     it "writes nothing" do
-      expect(File).not_to exist(File.join(config.output_path, "summary.md"))
+      expect(File).not_to exist(File.join(config.output_path, "signal.md"))
     end
 
     it "says nothing" do
@@ -78,7 +78,7 @@ RSpec.describe RSpec::Signal::Formatter do
 
     it "collects nothing and writes nothing" do
       expect(output.string).to eq("")
-      expect(File).not_to exist(File.join(config.output_path, "summary.md"))
+      expect(File).not_to exist(File.join(config.output_path, "signal.md"))
     end
   end
 
@@ -89,7 +89,7 @@ RSpec.describe RSpec::Signal::Formatter do
 
     it "still writes the artifact but stays quiet" do
       expect(output.string).to eq("")
-      expect(File).to exist(File.join(config.output_path, "summary.md"))
+      expect(File).to exist(File.join(config.output_path, "signal.md"))
     end
   end
 
@@ -115,14 +115,14 @@ RSpec.describe RSpec::Signal::Formatter do
       def broken.example = raise(NoMethodError, "nope")
       drive(broken, failure_notification)
 
-      expect(File.read(File.join(config.output_path, "summary.md"))).to include("an example")
+      expect(File.read(File.join(config.output_path, "signal.md"))).to include("an example")
     end
 
     it "survives a run where dump_summary never arrives" do
       formatter.example_failed(failure_notification)
 
       expect { formatter.close(nil) }.not_to raise_error
-      expect(File).to exist(File.join(config.output_path, "summary.md"))
+      expect(File).to exist(File.join(config.output_path, "signal.md"))
     end
   end
 

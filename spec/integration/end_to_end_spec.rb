@@ -47,14 +47,14 @@ RSpec.describe "a real rspec run", :integration do
 
     it "adds its own two-line summary" do
       expect(run.stdout).to include("rspec-signal: 2 failures in 2 distinct signatures")
-      expect(run.stdout).to include("AI report: tmp/rspec-signal/summary.md")
+      expect(run.stdout).to include("Report: tmp/rspec-signal/signal.md")
     end
 
     it "writes the artifacts" do
       run
-      expect(project).to be_artifact("summary.md")
+      expect(project).to be_artifact("signal.md")
       expect(project).to be_artifact("signal.json")
-      expect(project).to be_artifact("full.txt")
+      expect(project).not_to be_artifact("full.txt")
     end
 
     it "records the matcher failure with expected and actual" do
@@ -142,13 +142,13 @@ RSpec.describe "a real rspec run", :integration do
     it "removes a stale report once the suite goes green" do
       project.write("spec/broken_spec.rb", 'RSpec.describe("x") { it("fails") { expect(1).to eq(2) } }')
       project.run
-      expect(project).to be_artifact("summary.md")
+      expect(project).to be_artifact("signal.md")
 
       FileUtils.rm(File.join(project.root, "spec/broken_spec.rb"))
       run = project.run
 
       expect(run.stdout).to include("0 failures")
-      expect(project).not_to be_artifact("summary.md")
+      expect(project).not_to be_artifact("signal.md")
     end
 
     it "writes a gitignore so artifacts are not committed by accident" do
@@ -170,7 +170,7 @@ RSpec.describe "a real rspec run", :integration do
 
       expect(run.stdout).to include("1 example, 1 failure")
       expect(run.stdout).not_to include("rspec-signal:")
-      expect(project).not_to be_artifact("summary.md")
+      expect(project).not_to be_artifact("signal.md")
     end
   end
 
@@ -185,7 +185,73 @@ RSpec.describe "a real rspec run", :integration do
 
       expect(run.stdout).to include("fails")
       expect(run.stdout).not_to match(/^\.?F$/)
-      expect(project).to be_artifact("summary.md")
+      expect(project).to be_artifact("signal.md")
+    end
+  end
+
+  describe "quiet agent mode" do
+    before do
+      project.install_spec_helper
+      project.write("spec/noisy_spec.rb", <<~RUBY)
+        RSpec.describe "a noisy failure" do
+          it "retains the useful exception" do
+            noise = (1..2_000).map { |number| "framework/runtime noise line \#{number}" }.join("\\n")
+            raise ArgumentError, "useful diagnostic: invalid reader state\\n\#{noise}"
+          end
+        end
+      RUBY
+    end
+
+    it "keeps process output compact, preserves failure status, and writes compact artifacts" do
+      run = project.run_signal
+
+      expect(run.status).to eq(1)
+      expect(run.output.bytesize).to be < 2_000
+      expect(run.output).to include("1 examples, 1 failures", "Report: tmp/rspec-signal/signal.md")
+      expect(run.output).not_to include("framework/runtime noise line 1000", "useful diagnostic")
+    end
+
+    it "writes compact artifacts without the full output by default" do
+      project.run_signal
+
+      expect(project).to be_artifact("signal.md")
+      expect(project).to be_artifact("signal.json")
+      expect(project).not_to be_artifact("full.txt")
+      expect(project.read("signal.md")).to include("ArgumentError", "useful diagnostic: invalid reader state")
+    end
+
+    it "does not register a duplicate formatter or verbose output" do
+      run = project.run_signal
+
+      expect(run.output.scan("rspec-signal:").size).to eq(1)
+      expect(run.output).not_to include("Failures:", "Failed examples:")
+    end
+
+    it "preserves a passing suite's zero exit status" do
+      project.write("spec/noisy_spec.rb", 'RSpec.describe("green") { it("passes") { expect(1).to eq(1) } }')
+
+      expect(project.run_signal.status).to eq(0)
+    end
+
+    it "allows full output to be opted in" do
+      project.install_spec_helper("RSpec::Signal.configuration.write_full = true")
+      project.run_signal
+
+      expect(project.read("full.txt")).to include("framework/runtime noise line 1000")
+    end
+
+    it "keeps the fully qualified formatter interface quiet" do
+      run = project.run("--format", "RSpec::Signal::Formatter")
+
+      expect(run.output.bytesize).to be < 2_000
+      expect(run.output).not_to include("Failures:", "Failed examples:")
+    end
+
+    it "leaves normal mode verbose and failing" do
+      run = project.run
+
+      expect(run.status).to eq(1)
+      expect(run.output).to include("Failures:", "framework/runtime noise line 1000")
     end
   end
 
@@ -202,8 +268,8 @@ RSpec.describe "a real rspec run", :integration do
       RUBY
       project.run
 
-      expect(project.read("summary.md")).to include("[REDACTED]")
-      expect(project.read("summary.md")).not_to include("ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+      expect(project.read("signal.md")).to include("[REDACTED]")
+      expect(project.read("signal.md")).not_to include("ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     end
   end
 
@@ -233,11 +299,11 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "keeps the root cause, which is usually the answer" do
-      expect(project.read("summary.md")).to include("import failed", "Caused by KeyError:", "key not found: :price")
+      expect(project.read("signal.md")).to include("import failed", "Caused by KeyError:", "key not found: :price")
     end
 
     it "points at the first-party frame inside the cause" do
-      expect(project.read("summary.md")).to include("at lib/importer.rb:8")
+      expect(project.read("signal.md")).to include("at lib/importer.rb:8")
     end
   end
 
@@ -254,7 +320,7 @@ RSpec.describe "a real rspec run", :integration do
       RUBY
       project.run
 
-      summary = project.read("summary.md")
+      summary = project.read("signal.md")
       expect(summary).to include("MultipleExpectationsNotMetError")
       expect(summary).to include("got: 2").or include("expected: 2")
       expect(summary).to include('"b"')
@@ -368,10 +434,9 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.stdout.lines.size).to be > 400
     end
 
-    # The original is still recoverable; it is just not in the agent's way.
-    it "keeps the untouched output in full.txt" do
+    it "does not write the untouched output by default" do
       run
-      expect(project.read("full.txt")).to include("font-family")
+      expect(project).not_to be_artifact("full.txt")
     end
   end
 

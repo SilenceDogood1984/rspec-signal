@@ -96,7 +96,7 @@ module RSpec
       # Reduction happens once, here, so that every later stage -- the body,
       # the headline in the index table, and the fingerprint -- sees the
       # summary rather than six thousand lines of exception-page CSS. The
-      # original text is still written verbatim to `full.txt`.
+      # original text can still be written verbatim to `full.txt` when enabled.
       def reduce_html(lines, threshold)
         return lines unless threshold
 

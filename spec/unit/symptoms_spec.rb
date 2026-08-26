@@ -45,6 +45,19 @@ RSpec.describe RSpec::Signal::Symptoms do
 
       expect(first.key).not_to eq(second.key)
     end
+
+    it "recognises generic expected/got output only for a response status expression" do
+      symptom = symptom_for(["Failure/Error: expect(response.status).to eq(422)", "expected: 422", "got: 404"])
+
+      expect(symptom.key).to eq("http-status:404")
+      expect(symptom.detail).to eq("expected 422, got 404")
+    end
+
+    it "does not treat arbitrary three-digit comparisons as HTTP statuses" do
+      symptom = symptom_for(["Failure/Error: expect(reader.page_count).to eq(422)", "expected: 422", "got: 404"])
+
+      expect(symptom).to be_nil
+    end
   end
 
   describe "missing selectors" do

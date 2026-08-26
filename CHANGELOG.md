@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add opt-in quiet agent mode through `--format RSpec::Signal::Formatter`, preserving RSpec exit status while suppressing verbose failure rendering.
+- Make `signal.md` the primary Markdown artifact, retain `summary.md` as a compatibility copy, and make `full.txt` opt-in.
+- Recognize generic `expected`/`got` HTTP status mismatches when the failing expression explicitly reads `response.status`.
+
 All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

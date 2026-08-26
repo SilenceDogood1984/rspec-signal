@@ -35,6 +35,14 @@ module RSpec
         )
       end
 
+      # The one diagnostic characteristic this failure clusters on, if any.
+      # `nil` is the common and safe answer.
+      def symptom
+        return @symptom if defined?(@symptom)
+
+        @symptom = Symptoms.for(self)
+      end
+
       def to_h
         {
           description: description,
@@ -45,7 +53,8 @@ module RSpec
           message: message.body,
           trace: reduced.entries.map(&:to_h),
           omitted_frames: reduced.omitted_count,
-          diagnostics: diagnostics
+          diagnostics: diagnostics,
+          symptom: symptom&.to_h
         }.reject { |_, value| value.nil? || (value.respond_to?(:empty?) && value.empty?) }
       end
     end

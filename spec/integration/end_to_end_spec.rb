@@ -261,6 +261,120 @@ RSpec.describe "a real rspec run", :integration do
     end
   end
 
+  # The behaviour the real-world run exposed: a handful of specs failing for
+  # obviously connected reasons, which are nevertheless not the same failure.
+  describe "failures that are related but not identical" do
+    let(:run) do
+      project.install_spec_helper
+      project.write("app/reader.rb", <<~RUBY)
+        class Reader
+          def self.current = nil
+        end
+      RUBY
+      project.write("spec/reader_progress_spec.rb", <<~RUBY)
+        require "reader"
+
+        RSpec.describe "reader progress" do
+          it "shows a percentage" do
+            Reader.current.progress
+          end
+        end
+      RUBY
+      project.write("spec/reader_layout_spec.rb", <<~RUBY)
+        require "reader"
+
+        RSpec.describe "reader layout" do
+          it "renders the bar" do
+            value = Reader.current
+            value.progress
+          end
+        end
+      RUBY
+      project.run("-I", "app")
+    end
+
+    it "keeps them as separate signatures" do
+      expect(run.stdout).to include("2 failures in 2 distinct signatures")
+    end
+
+    it "reports one related cluster on the terminal too" do
+      expect(run.stdout).to include("1 related cluster")
+    end
+
+    it "explains the shared symptom in the report" do
+      expect(run.summary).to include("## Related failures", "Undefined method `progress` on nil")
+    end
+
+    it "points the reader from the cluster back at the signatures" do
+      expect(run.summary).to match(/- Signatures: #\d+, #\d+/)
+    end
+
+    it "publishes the cluster in the JSON artifact" do
+      run
+      related = project.json.fetch("related")
+
+      expect(related.size).to eq(1)
+      expect(related.first["signatures"].size).to eq(2)
+    end
+  end
+
+  describe "an enormous HTML response body" do
+    let(:run) do
+      project.install_spec_helper
+      project.write("spec/reader_completion_spec.rb", <<~'RUBY')
+        RSpec.describe "reader completion" do
+          def error_page
+            css = Array.new(400) { |i| "  .line-#{i} { font-family: monospace; padding: 0; }" }.join("\n")
+            <<~HTML
+              <!DOCTYPE html>
+              <html>
+              <head><title>Action Controller: Exception caught</title>
+              <style>
+              #{css}
+              </style></head>
+              <body><h1>NoMethodError in ReaderController#show</h1>
+              <h2>undefined method 'progress' for nil</h2></body>
+              </html>
+            HTML
+          end
+
+          it "shows the finished notice" do
+            expect(error_page).to include("You've finished this document.")
+          end
+        end
+      RUBY
+      project.run
+    end
+
+    it "keeps the expected value" do
+      expect(run.summary).to include("You've finished this document.")
+    end
+
+    it "says the actual value was HTML, and how much of it there was" do
+      expect(run.summary).to match(/\[HTML document: [\d,]+ lines, \d+ KB -- markup omitted\]/)
+    end
+
+    it "extracts the facts that diagnose it" do
+      expect(run.summary).to include("Title: Action Controller: Exception caught",
+                                     "Message: undefined method 'progress' for nil")
+    end
+
+    it "prints none of the exception page's CSS" do
+      expect(run.summary).not_to include("font-family", ".line-1")
+    end
+
+    it "leaves the report small, where RSpec's own output is not" do
+      expect(run.summary.lines.size).to be < 60
+      expect(run.stdout.lines.size).to be > 400
+    end
+
+    # The original is still recoverable; it is just not in the agent's way.
+    it "keeps the untouched output in full.txt" do
+      run
+      expect(project.read("full.txt")).to include("font-family")
+    end
+  end
+
   describe "reduction, measured against the real thing" do
     it "is dramatically smaller than RSpec's own failure output" do
       project.install_spec_helper

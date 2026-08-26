@@ -81,7 +81,8 @@ module RSpec
           seed: @seed,
           seed_used: @seed_used,
           environment: RSpec::Signal.environment,
-          errors_outside_examples: @summary.fetch(:errors_outside_examples, 0)
+          errors_outside_examples: @summary.fetch(:errors_outside_examples, 0),
+          relate_failures: config.relate_failures
         )
       end
 
@@ -100,10 +101,16 @@ module RSpec
                      "#{current.failure_count == 1 ? "failure" : "failures"} in " \
                      "#{current.group_count} distinct " \
                      "#{current.group_count == 1 ? "signature" : "signatures"}" \
-                     "#{omission_note(current)}"
+                     "#{cluster_note(current)}#{omission_note(current)}"
         @output.puts "AI report: #{writer.relative(result.summary_path)}" if result.summary_path
       rescue StandardError => e
         record_error(e)
+      end
+
+      def cluster_note(current)
+        return "" unless current.cluster_count.positive?
+
+        ", #{current.cluster_count} related #{current.cluster_count == 1 ? "cluster" : "clusters"}"
       end
 
       def omission_note(current)

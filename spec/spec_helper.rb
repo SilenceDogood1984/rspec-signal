@@ -5,6 +5,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "fixtures/backtraces"
+require_relative "fixtures/messages"
 require_relative "support/builders"
 
 RSpec.configure do |config|

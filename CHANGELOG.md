@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Related failure clustering.** A second, looser grouping layer beside the exact
+  signatures. Failures are clustered on one shared diagnostic symptom — the HTTP
+  status that actually came back, a missing Capybara selector, a route that does
+  not exist, an ActiveRecord model or schema shape, an undefined method and its
+  receiver, an uninitialized constant, or a namespaced exception class with nothing
+  finer to go on. Reported as a short `## Related failures` section, in `signal.json`
+  as `related`, and counted on the terminal summary. Exact signatures remain the
+  authoritative grouping; a cluster only ever claims a likely common cause.
+- A cluster is only reported when it spans more than one exact signature, so the
+  layer never restates what the signature section already said.
+- **HTML response reduction.** When a failure's actual value is a large HTML
+  document — most often a Rails exception page — the markup is replaced by its
+  size, `<title>`, headings and leading visible text. The expected value is left
+  untouched, and the original is still written verbatim to `full.txt`.
+- `config.relate_failures`, `config.max_clusters`, `config.max_cluster_specs`,
+  `config.reduce_html` and `config.max_html_chars`.
+
+### Changed
+
+- Diff hunk headers and HTML summary sizes are normalized out of the fingerprint,
+  so a page one line longer is no longer a different failure.
+
 ## [0.1.0] - 2026-08-26
 
 Initial release.

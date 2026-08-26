@@ -64,7 +64,12 @@ RSpec.describe RSpec::Signal::Formatter do
   end
 
   describe "a run with no failures" do
-    before { drive }
+    let(:quiet_mode) { false }
+
+    before do
+      allow(RSpec::Signal).to receive(:quiet_mode?).and_return(quiet_mode)
+      drive
+    end
 
     it "writes nothing" do
       expect(File).not_to exist(File.join(config.output_path, "signal.md"))
@@ -74,8 +79,8 @@ RSpec.describe RSpec::Signal::Formatter do
       expect(output.string).to eq("")
     end
 
-    context "in quiet mode" do
-      prepend_before { allow(RSpec::Signal).to receive(:quiet_mode?).and_return(true) }
+    context "when in quiet mode" do
+      let(:quiet_mode) { true }
 
       it "prints the RSpec result without a report path" do
         expect(output.string).to include("10 examples, 0 failures, 0 pending")

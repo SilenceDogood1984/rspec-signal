@@ -297,7 +297,8 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.status).to eq(0)
       expect(run.output).to include("1 examples, 0 failures")
       expect(run.output).not_to include("Report:", "rspec-signal:")
-      expect(%w[signal.md signal.json summary.md full.txt]).to all(satisfy { |name| !project.artifact?(name) })
+      stale_artifacts = %w[signal.md signal.json summary.md full.txt].select { |name| project.artifact?(name) }
+      expect(stale_artifacts).to be_empty
     end
 
     it "allows full output to be opted in" do

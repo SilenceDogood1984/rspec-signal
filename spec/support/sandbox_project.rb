@@ -59,7 +59,10 @@ class SandboxProject
   end
 
   def run_signal_parallel(*args, env: {})
-    process_env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }.merge(env)
+    process_env = {
+      "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR),
+      "SPEC_OPTS" => "--require ./spec/spec_helper.rb --no-color"
+    }.merge(env)
     stdout, stderr, status = Open3.capture3(process_env, RbConfig.ruby, PARALLEL_EXECUTABLE, *args, chdir: root)
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end

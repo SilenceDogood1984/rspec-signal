@@ -166,9 +166,9 @@ RSpec.describe "parallel_tests support", :integration do
       module ArtifactSabotage
         def write_worker(report, config)
           super
-          return unless ENV.fetch("TEST_ENV_NUMBER", "1") == "1"
 
-          pointer = File.join(ENV.fetch("RSPEC_SIGNAL_RUN_REGISTRY"), "1.path")
+          worker = RSpec::Signal::ParallelRun.worker_id
+          pointer = File.join(ENV.fetch("RSPEC_SIGNAL_RUN_REGISTRY"), "\#{worker}.path")
           artifact = File.read(pointer).strip
           File.delete(artifact) if ENV["SIGNAL_ARTIFACT_SABOTAGE"] == "missing"
           File.write(artifact, "{corrupt") if ENV["SIGNAL_ARTIFACT_SABOTAGE"] == "corrupt"

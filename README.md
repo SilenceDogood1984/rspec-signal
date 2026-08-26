@@ -137,9 +137,10 @@ bundle exec rspec-signal
 bundle exec rspec-signal spec/models/user_spec.rb:42
 ```
 
-The wrapper selects Signal as RSpec's only formatter, so no progress or verbose
-failure formatter is added and stdout stays bounded while RSpec still runs every
-example. A failing suite remains non-zero; a passing suite remains zero. The
+The wrapper selects Signal as RSpec's only formatter, so no verbose failure formatter
+is added. On an interactive terminal, a bounded single-line progress bar is repainted
+in place; redirected stdout contains no live progress or control sequences. A failing
+suite remains non-zero; a passing suite remains zero. The
 low-level `bundle exec rspec --format RSpec::Signal::Formatter` interface remains
 available after requiring `rspec/signal` from the spec helper.
 

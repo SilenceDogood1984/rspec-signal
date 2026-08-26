@@ -30,6 +30,10 @@ RSpec.describe RSpec::Signal::Formatter do
     )
   end
 
+  def start_notification(count)
+    instance_double(RSpec::Core::Notifications::StartNotification, count: count)
+  end
+
   def drive(*notifications, seed: 1234, seed_used: true)
     notifications.each { |notification| formatter.example_failed(notification) }
     formatter.dump_summary(summary_notification(failures: notifications.size))
@@ -90,6 +94,45 @@ RSpec.describe RSpec::Signal::Formatter do
     it "still writes the artifact but stays quiet" do
       expect(output.string).to eq("")
       expect(File).to exist(File.join(config.output_path, "signal.md"))
+    end
+  end
+
+  describe "quiet progress" do
+    before do
+      allow(RSpec::Signal).to receive(:quiet_mode?).and_return(true)
+      allow(output).to receive(:tty?).and_return(tty)
+    end
+
+    context "when output is a TTY" do
+      let(:tty) { true }
+
+      it "repaints a bounded single-line bar from completed-example events" do
+        formatter.start(start_notification(4))
+        formatter.example_passed(nil)
+        formatter.example_pending(nil)
+
+        expect(output.string).to include("\rsignal [██████████░░░░░░░░░░] 50% 2/4")
+        expect(output.string).not_to include("passed", "pending")
+      end
+
+      it "counts failures without rendering their text" do
+        formatter.start(start_notification(2))
+        formatter.example_failed(failure_notification(message: "giant failure " * 1_000))
+
+        expect(output.string).to include("50% 1/2")
+        expect(output.string).not_to include("giant failure")
+      end
+    end
+
+    context "when stdout is not a TTY" do
+      let(:tty) { false }
+
+      it "emits no live repaint output" do
+        formatter.start(start_notification(100))
+        100.times { formatter.example_passed(nil) }
+
+        expect(output.string).to eq("")
+      end
     end
   end
 

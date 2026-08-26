@@ -33,7 +33,7 @@ RSpec.describe "a real rspec run", :integration do
       expect(ordinary.status).to eq(0)
       expect(signal.status).to eq(0)
       expect(ordinary.output).to include("2 examples, 0 failures")
-      expect(project.recorded_examples).to contain_exactly(*ordinary_examples)
+      expect(project.recorded_examples).to match_array(ordinary_examples)
     end
 
     it "runs an explicit spec path" do

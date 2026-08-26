@@ -3,13 +3,13 @@
 [![CI](https://github.com/SilenceDogood1984/rspec-signal/actions/workflows/ci.yml/badge.svg)](https://github.com/SilenceDogood1984/rspec-signal/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/rspec-signal.svg)](https://rubygems.org/gems/rspec-signal)
 
-**Your test suite has 43 failures. RSpec gives your coding agent 22,000 lines. `rspec-signal` gives it the parts that matter.**
+**In one real-world run, 42 failures produced roughly 22,000 lines of raw RSpec output. `rspec-signal` reduced that to roughly 1,100 lines of focused diagnostics.**
 
 RSpec's failure output is written for a human staring at a terminal, scrolling to the
 one line they recognise. Hand the same output to an AI coding agent and you spend
 thousands of tokens on `rspec-core/hooks.rb`, Bundler, and Thor before the agent
-reaches a single line of your code — and you pay that cost forty-three times over,
-even when all forty-three failures are one bug.
+reaches a single line of your code — and you pay that cost repeatedly,
+even when many failures stem from one bug.
 
 `rspec-signal` is a deterministic context-reduction layer between RSpec and a coding
 agent. It writes `tmp/rspec-signal/signal.md`: a compact, model-neutral report you
@@ -203,7 +203,11 @@ workers are not yet guaranteed. Add `parallel_tests` to the application's test b
 it is deliberately a development/test dependency of this gem rather than a runtime
 dependency.
 
-A quiet failing run ends with output like:
+In that observed run, 2,085 examples produced 42 failures, 35 exact signatures,
+4 related clusters, and omitted 2,767 backtrace frames. The raw output was roughly
+22,000 lines; the final compact parallel artifact was roughly 1,100 lines. These
+figures describe that run, not a universal benchmark. Its quiet terminal summary
+ended like this:
 
 ```text
 2085 examples, 42 failures, 6 pending

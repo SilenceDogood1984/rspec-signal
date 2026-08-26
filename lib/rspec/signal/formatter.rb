@@ -30,7 +30,7 @@ module RSpec
       def start(_notification)
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
-        RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed?
+        RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
       end
 
       def example_failed(notification)
@@ -98,7 +98,7 @@ module RSpec
 
         current = report
         @output.puts
-        print_rspec_summary(current) unless RSpec::Signal.auto_installed?
+        print_rspec_summary(current) if RSpec::Signal.quiet_mode?
         @output.puts "rspec-signal: #{current.failure_count} " \
                      "#{current.failure_count == 1 ? "failure" : "failures"} in " \
                      "#{current.group_count} distinct " \

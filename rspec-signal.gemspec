@@ -28,11 +28,14 @@ Gem::Specification.new do |spec|
 
   spec.files = Dir[
     "lib/**/*.rb",
+    "exe/*",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
   ]
   spec.require_paths = ["lib"]
+  spec.bindir = "exe"
+  spec.executables = ["rspec-signal"]
 
   spec.add_dependency "rspec-core", ">= 3.10", "< 4.0"
 end

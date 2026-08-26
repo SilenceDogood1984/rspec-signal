@@ -208,8 +208,6 @@ module RSpec
       end
 
       def raw_output(notification, position)
-        return nil unless @config.write_full
-
         text = notification.fully_formatted(position, ::RSpec::Core::Notifications::NullColorizer)
         @config.redactor.call(text)
       rescue StandardError => e

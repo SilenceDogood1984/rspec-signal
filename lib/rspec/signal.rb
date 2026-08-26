@@ -57,6 +57,7 @@ module RSpec
         @installed = true
         return false unless configuration.enabled?
 
+        quiet_mode? # Capture CLI intent before RSpec finishes parsing ARGV.
         loader = rspec_config.formatter_loader
         unless loader.formatters.any?(Formatter)
           rspec_config.add_formatter(Formatter)
@@ -76,6 +77,19 @@ module RSpec
       # for it with `--format`. Only then do we put RSpec's default formatter
       # back, because only then did we displace it.
       def auto_installed? = !!@auto_installed
+
+      # Explicit formatter selection happens after --require files are loaded,
+      # so install! may initially look automatic. Detect the user's intent from
+      # the original CLI arguments (or the wrapper's explicit marker) at start
+      # time, after RSpec has finished configuring its formatter loader.
+      def quiet_mode?
+        return true if ENV["RSPEC_SIGNAL_QUIET"] == "1"
+        return @quiet_mode_requested if defined?(@quiet_mode_requested)
+
+        @quiet_mode_requested = formatter_arguments.any? do |name|
+          ["RSpec::Signal::Formatter", "signal"].include?(name)
+        end
+      end
 
       # Adding any formatter suppresses RSpec's default one. When rspec-signal
       # installed itself the user did not ask for that, so restore normal
@@ -107,10 +121,20 @@ module RSpec
       def reset!
         @installed = false
         @auto_installed = false
+        remove_instance_variable(:@quiet_mode_requested) if defined?(@quiet_mode_requested)
         @configuration = nil
       end
 
       private
+
+      def formatter_arguments
+        ARGV.each_with_index.filter_map do |argument, index|
+          next ARGV[index + 1] if ["--format", "-f"].include?(argument)
+          next ::Regexp.last_match(1) if argument =~ /\A--format=(.+)\z/
+
+          argument[2..] if argument.start_with?("-f") && argument.length > 2
+        end
+      end
 
       def install_integrations!(rspec_config)
         return unless configuration.capture_capybara

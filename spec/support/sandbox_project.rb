@@ -12,6 +12,7 @@ require "json"
 # and the exit status the developer actually sees.
 class SandboxProject
   LIB = File.expand_path("../../lib", __dir__)
+  EXECUTABLE = File.expand_path("../../exe/rspec-signal", __dir__)
 
   attr_reader :root
 
@@ -48,6 +49,13 @@ class SandboxProject
     command = [RbConfig.ruby, "-r", "rspec/core", "-e", "RSpec::Core::Runner.invoke",
                "--", "--require", "./spec/spec_helper.rb", "--no-color", *args]
     stdout, stderr, status = Open3.capture3({ "RSPEC_SIGNAL_DISABLE" => nil }, *command, chdir: root)
+    Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
+  end
+
+  def run_signal(*args)
+    args = [*args, "spec"] unless args.any? { |arg| arg.to_s.start_with?("spec") }
+    env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }
+    stdout, stderr, status = Open3.capture3(env, RbConfig.ruby, EXECUTABLE, "--no-color", *args, chdir: root)
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 

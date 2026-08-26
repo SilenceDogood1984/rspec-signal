@@ -203,7 +203,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "keeps process output compact, preserves failure status, and writes compact artifacts" do
-      run = project.run("--format", "RSpec::Signal::Formatter")
+      run = project.run_signal
 
       expect(run.status).to eq(1)
       expect(run.output.bytesize).to be < 2_000
@@ -216,7 +216,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "does not register a duplicate formatter or verbose output" do
-      run = project.run("--format", "RSpec::Signal::Formatter")
+      run = project.run_signal
 
       expect(run.output.scan("rspec-signal:").size).to eq(1)
       expect(run.output).not_to include("Failures:", "Failed examples:")
@@ -225,14 +225,21 @@ RSpec.describe "a real rspec run", :integration do
     it "preserves a passing suite's zero exit status" do
       project.write("spec/noisy_spec.rb", 'RSpec.describe("green") { it("passes") { expect(1).to eq(1) } }')
 
-      expect(project.run("--format", "RSpec::Signal::Formatter").status).to eq(0)
+      expect(project.run_signal.status).to eq(0)
     end
 
     it "allows full output to be opted in" do
       project.install_spec_helper("RSpec::Signal.configuration.write_full = true")
-      project.run("--format", "RSpec::Signal::Formatter")
+      project.run_signal
 
       expect(project.read("full.txt")).to include("framework/runtime noise line 1000")
+    end
+
+    it "keeps the fully qualified formatter interface quiet" do
+      run = project.run("--format", "RSpec::Signal::Formatter")
+
+      expect(run.output.bytesize).to be < 2_000
+      expect(run.output).not_to include("Failures:", "Failed examples:")
     end
 
     it "leaves normal mode verbose and failing" do

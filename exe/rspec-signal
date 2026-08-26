@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "rspec/core"
+
+ENV["RSPEC_SIGNAL_QUIET"] = "1"
+arguments = ["--require", "rspec/signal", "--format", "RSpec::Signal::Formatter", *ARGV]
+exit RSpec::Core::Runner.run(arguments)

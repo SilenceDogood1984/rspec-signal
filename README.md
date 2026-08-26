@@ -129,18 +129,19 @@ bundle exec rspec --require rspec/signal --format progress --format RSpec::Signa
 
 ## Autonomous-agent workflow (quiet mode)
 
-After requiring `rspec/signal` from your spec helper, make the signal formatter the
-only formatter for an autonomous agent:
+Run the gem's quiet wrapper for an autonomous agent. It forwards every argument to
+RSpec and exits with RSpec's status:
 
 ```bash
-bundle exec rspec --format RSpec::Signal::Formatter
+bundle exec rspec-signal
+bundle exec rspec-signal spec/models/user_spec.rb:42
 ```
 
-The fully qualified formatter name is RSpec's standard interface for third-party
-formatters. Selecting it explicitly is the important part: no progress or verbose
-failure formatter is added, so stdout stays bounded while RSpec still runs every
-example and returns its normal exit status. A failing suite remains non-zero; a
-passing suite remains zero.
+The wrapper selects Signal as RSpec's only formatter, so no progress or verbose
+failure formatter is added and stdout stays bounded while RSpec still runs every
+example. A failing suite remains non-zero; a passing suite remains zero. The
+low-level `bundle exec rspec --format RSpec::Signal::Formatter` interface remains
+available after requiring `rspec/signal` from the spec helper.
 
 ```text
 RSpec runs the full suite

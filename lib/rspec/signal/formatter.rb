@@ -12,7 +12,10 @@ module RSpec
     # verbose failure renderer. When auto-installed it restores the default
     # formatter so requiring the gem does not change normal human output.
     class Formatter
-      ::RSpec::Core::Formatters.register self, :start, :example_failed, :dump_summary, :seed, :close
+      ::RSpec::Core::Formatters.register self, :start, :example_passed, :example_failed,
+                                         :example_pending, :dump_summary, :seed, :close
+
+      PROGRESS_WIDTH = 20
 
       attr_reader :output
 
@@ -27,10 +30,19 @@ module RSpec
 
       def config = RSpec::Signal.configuration
 
-      def start(_notification)
+      def start(notification)
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
         RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
+        start_progress(notification.count)
+      end
+
+      def example_passed(_notification)
+        advance_progress
+      end
+
+      def example_pending(_notification)
+        advance_progress
       end
 
       def example_failed(notification)
@@ -39,6 +51,8 @@ module RSpec
         @failures << builder.call(notification, position: @failures.size + 1)
       rescue StandardError => e
         record_error(e)
+      ensure
+        advance_progress
       end
 
       def dump_summary(notification)
@@ -63,6 +77,7 @@ module RSpec
       def close(_notification)
         return unless config.enabled?
 
+        finish_progress
         if ParallelRun.worker?
           ParallelRun.write_worker(report, config)
         else
@@ -92,6 +107,37 @@ module RSpec
       end
 
       private
+
+      def start_progress(total)
+        return unless config.enabled? && RSpec::Signal.quiet_mode?
+        return if ParallelRun.worker? || !@output.respond_to?(:tty?) || !@output.tty?
+        return unless total.to_i.positive?
+
+        @progress_total = total.to_i
+        @progress_completed = 0
+        render_progress
+      end
+
+      def advance_progress
+        return unless @progress_total
+
+        @progress_completed = [@progress_completed + 1, @progress_total].min
+        render_progress
+      end
+
+      def render_progress
+        percentage = (@progress_completed * 100) / @progress_total
+        filled = (@progress_completed * PROGRESS_WIDTH) / @progress_total
+        bar = ("█" * filled) + ("░" * (PROGRESS_WIDTH - filled))
+        @output.print "\rsignal [#{bar}] #{percentage}% #{@progress_completed}/#{@progress_total}"
+      end
+
+      def finish_progress
+        return unless @progress_total
+
+        @output.puts
+        @progress_total = nil
+      end
 
       def builder = @builder ||= FailureBuilder.new(config)
       def writer  = @writer ||= Writer.new(config)

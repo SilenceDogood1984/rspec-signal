@@ -1,8 +1,11 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "rspec/core"
-
 ENV["RSPEC_SIGNAL_QUIET"] = "1"
 arguments = ["--require", "rspec/signal", "--format", "RSpec::Signal::Formatter", *ARGV]
-exit RSpec::Core::Runner.run(arguments)
+
+# Run the same executable as `bundle exec rspec`. Besides avoiding a parallel
+# implementation of RSpec's CLI, this is important because the executable uses
+# Runner.invoke, which applies RSpec's default spec discovery when no paths are
+# supplied. Runner.run is a lower-level API and does not provide that behavior.
+exec Gem.ruby, Gem.bin_path("rspec-core", "rspec"), *arguments

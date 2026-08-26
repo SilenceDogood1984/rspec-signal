@@ -7,6 +7,64 @@ RSpec.describe "a real rspec run", :integration do
 
   after { project.cleanup }
 
+  describe "RSpec CLI compatibility" do
+    before do
+      project.install_spec_helper(<<~RUBY)
+        RSpec.configure do |config|
+          config.filter_run_excluding excluded_by_project: true
+        end
+      RUBY
+      project.write(".rspec", "--require ./spec/spec_helper.rb\n--no-color\n")
+      project.write("spec/example_spec.rb", <<~RUBY)
+        RSpec.describe "CLI behavior" do
+          it("runs the first example", :some_tag) { expect(true).to be(true) }
+          it("runs the second example") { expect(true).to be(true) }
+          it("honors project configuration", :excluded_by_project) { raise "must not run" }
+        end
+      RUBY
+    end
+
+    it "discovers the same examples as ordinary RSpec with no positional arguments" do
+      ordinary = project.run
+      signal = project.run_signal
+
+      expect(ordinary.status).to eq(0)
+      expect(signal.status).to eq(0)
+      expect(ordinary.output).to include("2 examples, 0 failures")
+      expect(signal.output).to include("2 examples, 0 failures")
+    end
+
+    it "runs an explicit spec path" do
+      run = project.run_signal("spec/example_spec.rb")
+
+      expect(run.status).to eq(0)
+      expect(run.output).to include("2 examples, 0 failures")
+    end
+
+    it "supports file and line targeting" do
+      run = project.run_signal("spec/example_spec.rb:2")
+
+      expect(run.status).to eq(0)
+      expect(run.output).to include("1 example, 0 failures")
+    end
+
+    it "passes ordinary RSpec options through unchanged" do
+      run = project.run_signal("--tag", "some_tag")
+
+      expect(run.status).to eq(0)
+      expect(run.output).to include("1 example, 0 failures")
+    end
+
+    it "does not change ordinary RSpec failure status or output" do
+      project.write("spec/failing_spec.rb", 'RSpec.describe("failure") { it("fails") { expect(1).to eq(2) } }')
+
+      run = project.run
+
+      expect(run.status).to eq(1)
+      expect(run.output).to include("Failures:", "3 examples, 1 failure")
+    end
+  end
+
   describe "a pure Ruby project with no Rails" do
     let(:run) do
       project.install_spec_helper

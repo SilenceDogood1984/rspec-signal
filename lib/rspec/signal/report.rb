@@ -68,6 +68,15 @@ module RSpec
           related: clusters.map(&:to_h)
         }
       end
+
+      # Worker interchange data. Unlike the public report summary this retains
+      # every reduced failure so grouping can be repeated across all workers.
+      def worker_h
+        serialized = failures.map do |failure|
+          failure.to_h.merge(fingerprint: failure.fingerprint.to_h, raw: failure.raw)
+        end
+        to_h.merge(schema: 2, failures: serialized)
+      end
     end
   end
 end

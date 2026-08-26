@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Add opt-in quiet agent mode through `--format RSpec::Signal::Formatter`, preserving RSpec exit status while suppressing verbose failure rendering.
-- Make `signal.md` the primary Markdown artifact, retain `summary.md` as a compatibility copy, and make `full.txt` opt-in.
-- Recognize generic `expected`/`got` HTTP status mismatches when the failing expression explicitly reads `response.status`.
-
 All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -14,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- `rspec-signal-parallel`, a quiet `parallel_tests` wrapper that isolates worker
+  JSON by run and test-process number, then globally merges failures into the
+  normal top-level artifacts without changing the parallel test exit status.
+- Opt-in quiet agent mode through `--format RSpec::Signal::Formatter`, preserving
+  RSpec exit status while suppressing verbose failure rendering.
+- `signal.md` as the primary Markdown artifact, with `summary.md` retained as a
+  compatibility copy and `full.txt` opt-in.
+- Generic `expected`/`got` HTTP status mismatch recognition when the failing
+  expression explicitly reads `response.status`.
 
 - **Related failure clustering.** A second, looser grouping layer beside the exact
   signatures. Failures are clustered on one shared diagnostic symptom — the HTTP

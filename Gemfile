@@ -4,6 +4,7 @@ source "https://rubygems.org"
 
 gemspec
 
+gem "parallel_tests", ">= 4.0", group: %i[development test]
 gem "rake", "~> 13.0"
 gem "rubocop", "~> 1.66"
 gem "rubocop-rspec", "~> 3.0"

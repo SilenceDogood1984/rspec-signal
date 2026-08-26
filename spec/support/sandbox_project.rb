@@ -55,7 +55,9 @@ class SandboxProject
   def run_signal(*args)
     args = [*args, "spec"] unless args.any? { |arg| arg.to_s.start_with?("spec") }
     env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }
-    stdout, stderr, status = Open3.capture3(env, RbConfig.ruby, EXECUTABLE, "--no-color", *args, chdir: root)
+    stdout, stderr, status = Open3.capture3(
+      env, RbConfig.ruby, EXECUTABLE, "--require", "./spec/spec_helper.rb", "--no-color", *args, chdir: root
+    )
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 

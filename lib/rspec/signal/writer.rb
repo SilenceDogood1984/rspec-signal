@@ -30,14 +30,9 @@ module RSpec
         FileUtils.mkdir_p(dir)
         write_gitignore
 
-        written = []
         markdown = Reporters::Markdown.new(report, @config).render
-        written << write_file(SIGNAL, markdown)
-        # Cheap compatibility for users and CI jobs created before signal.md
-        # became the primary agent-facing artifact.
-        written << write_file(SUMMARY, markdown)
-        written << write_file(JSON, Reporters::JsonReport.new(report, @config).render) if @config.write_json
-        written << write_file(FULL, Reporters::FullOutput.new(report, @config).render) if @config.write_full
+        written = write_markdown(markdown)
+        written.concat(optional_artifacts(report))
 
         stale = MANAGED - written.map { |path| File.basename(path) }
         Result.new(summary_path: File.join(dir, SIGNAL), written: written, cleaned: remove(stale))
@@ -51,6 +46,19 @@ module RSpec
       end
 
       private
+
+      def write_markdown(markdown)
+        # Cheap compatibility for users and CI jobs created before signal.md
+        # became the primary agent-facing artifact.
+        [write_file(SIGNAL, markdown), write_file(SUMMARY, markdown)]
+      end
+
+      def optional_artifacts(report)
+        written = []
+        written << write_file(JSON, Reporters::JsonReport.new(report, @config).render) if @config.write_json
+        written << write_file(FULL, Reporters::FullOutput.new(report, @config).render) if @config.write_full
+        written
+      end
 
       def clean
         Result.new(summary_path: nil, written: [], cleaned: remove(MANAGED))

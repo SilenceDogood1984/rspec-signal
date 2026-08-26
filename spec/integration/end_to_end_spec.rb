@@ -209,6 +209,11 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.output.bytesize).to be < 2_000
       expect(run.output).to include("1 examples, 1 failures", "Report: tmp/rspec-signal/signal.md")
       expect(run.output).not_to include("framework/runtime noise line 1000", "useful diagnostic")
+    end
+
+    it "writes compact artifacts without the full output by default" do
+      project.run_signal
+
       expect(project).to be_artifact("signal.md")
       expect(project).to be_artifact("signal.json")
       expect(project).not_to be_artifact("full.txt")

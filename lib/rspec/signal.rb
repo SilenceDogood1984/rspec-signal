@@ -86,9 +86,7 @@ module RSpec
         return true if ENV["RSPEC_SIGNAL_QUIET"] == "1"
         return @quiet_mode_requested if defined?(@quiet_mode_requested)
 
-        @quiet_mode_requested = formatter_arguments.any? do |name|
-          ["RSpec::Signal::Formatter", "signal"].include?(name)
-        end
+        @quiet_mode_requested = formatter_arguments.intersect?(["RSpec::Signal::Formatter", "signal"])
       end
 
       # Adding any formatter suppresses RSpec's default one. When rspec-signal

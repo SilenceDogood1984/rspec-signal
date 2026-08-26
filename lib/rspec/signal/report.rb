@@ -71,9 +71,15 @@ module RSpec
 
       # Worker interchange data. Unlike the public report summary this retains
       # every reduced failure so grouping can be repeated across all workers.
-      def worker_h
+      #
+      # `raw` -- the unreduced formatter output -- is included only when
+      # `write_full` is on, since it is otherwise discarded on merge and would
+      # just bloat every worker payload for no reason.
+      def worker_h(write_full: false)
         serialized = failures.map do |failure|
-          failure.to_h.merge(fingerprint: failure.fingerprint.to_h, raw: failure.raw)
+          attributes = failure.to_h.merge(fingerprint: failure.fingerprint.to_h)
+          attributes[:raw] = failure.raw if write_full
+          attributes
         end
         to_h.merge(schema: 2, failures: serialized)
       end

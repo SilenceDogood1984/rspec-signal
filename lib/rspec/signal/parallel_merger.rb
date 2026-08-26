@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require "json"
 
 module RSpec
@@ -20,15 +21,33 @@ module RSpec
         validate_configuration!(payloads)
         apply_configuration(payloads.first&.fetch("configuration", {}) || {})
         report = aggregate(payloads)
-        Result.new(
+        result = Result.new(
           report: report,
           workers: payloads.size,
           missing: missing,
           write_result: Writer.new(@config).write(report)
         )
+        # Only once we have successfully produced a report: a worker JSON that
+        # failed to parse should stay on disk for a human to look at, not be
+        # deleted along with everything else.
+        cleanup_worker_artifacts(paths)
+        result
       end
 
       private
+
+      # Worker payloads are per-run (`workers/<run-id>/<worker-id>/signal.json`),
+      # so once merged into the top-level report they would otherwise sit in
+      # the project forever: a green run's own hygiene guarantee (stale
+      # artifacts never survive a passing suite) does not reach them, and each
+      # payload can carry the full unreduced output of every failure.
+      def cleanup_worker_artifacts(paths)
+        run_directories(paths).each { |directory| FileUtils.rm_rf(directory) }
+      end
+
+      def run_directories(paths)
+        paths.filter_map { |path| File.dirname(path, 2) if path.include?("/workers/") }.uniq
+      end
 
       def aggregate(payloads)
         summaries = payloads.map { |payload| payload.fetch("summary", {}) }

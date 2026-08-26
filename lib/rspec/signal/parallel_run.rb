@@ -25,7 +25,8 @@ module RSpec
         directory = File.join(config.output_path, "workers", ENV.fetch(RUN_ID), worker_id)
         FileUtils.mkdir_p(directory)
         path = File.join(directory, "signal.json")
-        payload = report.worker_h.merge(worker: worker_id, configuration: configuration_h(config))
+        payload = report.worker_h(write_full: config.write_full)
+                        .merge(worker: worker_id, configuration: configuration_h(config))
         atomic_write(path, "#{JSON.pretty_generate(payload)}\n")
         register(path)
       end

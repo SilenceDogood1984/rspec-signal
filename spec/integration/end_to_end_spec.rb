@@ -115,6 +115,7 @@ RSpec.describe "a real rspec run", :integration do
       expect(project).to be_artifact("signal.md")
       expect(project).to be_artifact("signal.json")
       expect(project).not_to be_artifact("full.txt")
+      expect(project).not_to be_artifact("summary.md")
     end
 
     it "records the matcher failure with expected and actual" do
@@ -297,7 +298,7 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.status).to eq(0)
       expect(run.output).to include("1 examples, 0 failures")
       expect(run.output).not_to include("Report:", "rspec-signal:")
-      stale_artifacts = %w[signal.md signal.json summary.md full.txt].select { |name| project.artifact?(name) }
+      stale_artifacts = %w[signal.md signal.json full.txt].select { |name| project.artifact?(name) }
       expect(stale_artifacts).to be_empty
     end
 

@@ -33,7 +33,7 @@ module RSpec
       attr_accessor :enabled, :terminal_summary, :capture_capybara, :capture_page_html
 
       # Classification.
-      attr_accessor :project_root, :extra_first_party, :framework_patterns, :ignore_patterns, :spec_patterns
+      attr_accessor :project_root, :extra_first_party, :framework_patterns, :ignore_patterns
 
       def initialize
         default_budgets
@@ -128,7 +128,6 @@ module RSpec
         @extra_first_party  = []
         @framework_patterns = Backtrace::Classifier::DEFAULT_FRAMEWORK_PATTERNS.dup
         @ignore_patterns    = Backtrace::Classifier::DEFAULT_IGNORE_PATTERNS.dup
-        @spec_patterns      = Fingerprint::DEFAULT_SPEC_PATTERNS.dup
       end
 
       def default_root

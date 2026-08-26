@@ -63,6 +63,46 @@ RSpec.describe RSpec::Signal::ParallelMerger do
     expect(result.report.example_count).to eq(0)
   end
 
+  # Worker payloads live under `<output>/workers/<run-id>/<worker-id>/`. Once
+  # merged they are pure interchange data with no further purpose, and one
+  # can carry the full unreduced output of every failure it saw.
+  describe "worker artifact cleanup" do
+    def run_directory(run_id) = File.join(output, "workers", run_id)
+
+    def write_worker_in_run(run_id, worker, examples:, failures:)
+      path = File.join(run_directory(run_id), worker, "signal.json")
+      FileUtils.mkdir_p(File.dirname(path))
+      data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,
+                                             "pending" => 0 }, "failures" => failures,
+               "configuration" => {}, "environment" => {} }
+      File.write(path, JSON.generate(data))
+      File.write(File.join(registry, "#{run_id}-#{worker}.path"), path)
+    end
+
+    it "removes the run's worker directory once aggregation succeeds" do
+      config = RSpec::Signal.configuration
+      config.output_dir = output
+      config.reset_memoized!
+      write_worker_in_run("run-1", "1", examples: 1, failures: [])
+      write_worker_in_run("run-1", "2", examples: 1, failures: [])
+
+      described_class.new(registry: registry, config: config).call
+
+      expect(Dir.exist?(run_directory("run-1"))).to be(false)
+    end
+
+    it "leaves the worker directory in place when aggregation fails" do
+      path = File.join(run_directory("run-2"), "1", "signal.json")
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "{corrupt")
+      File.write(File.join(registry, "1.path"), path)
+
+      expect { described_class.new(registry: registry).call }.to raise_error(JSON::ParserError)
+
+      expect(Dir.exist?(run_directory("run-2"))).to be(true)
+    end
+  end
+
   def write_worker(worker, examples:, failures:, configuration: {})
     path = File.join(registry, "worker-#{worker}.json")
     data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,

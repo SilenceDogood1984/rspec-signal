@@ -38,19 +38,22 @@ RSpec.describe "RSpec::Signal.install!" do
     expect(formatter_classes).not_to include(RSpec::Signal::Formatter)
   end
 
+  # `prepend_after` so this runs before any example-group-level `after(:each)`
+  # hook -- rspec-rails tears the Capybara session down at that level, and
+  # capturing after teardown would find nothing.
   it "installs the Capybara diagnostics hook by default" do
-    allow(rspec_config).to receive(:after)
+    allow(rspec_config).to receive(:prepend_after)
     RSpec::Signal.install!(rspec_config)
 
-    expect(rspec_config).to have_received(:after).with(:each)
+    expect(rspec_config).to have_received(:prepend_after).with(:each)
   end
 
   it "skips the Capybara hook when asked" do
-    allow(rspec_config).to receive(:after)
+    allow(rspec_config).to receive(:prepend_after)
     RSpec::Signal.configure { |config| config.capture_capybara = false }
     RSpec::Signal.install!(rspec_config)
 
-    expect(rspec_config).not_to have_received(:after)
+    expect(rspec_config).not_to have_received(:prepend_after)
   end
 
   describe "not stealing the developer's terminal output" do

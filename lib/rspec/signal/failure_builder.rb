@@ -51,9 +51,9 @@ module RSpec
 
       def message_for(notification, exception, extra)
         appended = extra + shared_group_descriptions(notification.example)
-        lines = message_lines_for(notification, appended) + cause_lines(exception)
-        Message.new(lines, redactor: @config.redactor, project: @config.project,
-                           html_threshold: @config.html_threshold)
+        Message.new(message_lines_for(notification, appended),
+                    redactor: @config.redactor, project: @config.project,
+                    html_threshold: @config.html_threshold, cause_lines: cause_lines(exception))
       end
 
       # We use the exception's own backtrace rather than RSpec's filtered one:

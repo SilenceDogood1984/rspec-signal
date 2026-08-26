@@ -245,7 +245,128 @@ RSpec.describe RSpec::Signal::Reporters::Markdown do
     end
   end
 
+  describe "the related failures section" do
+    def request_failure(spec:, line:, message:)
+      build_failure(config: config, backtrace: Backtraces.expectation_not_met(spec: spec, line: line),
+                    exception_class: "RSpec::Expectations::ExpectationNotMetError",
+                    description: "#{spec}:#{line}", message: message)
+    end
+
+    subject(:markdown) { render_markdown(build_report(failures), config: config) }
+
+    let(:failures) do
+      [request_failure(spec: "spec/requests/checkpoint_spec.rb", line: 31,
+                       message: Messages.http_status(expected: 200, actual: 404)),
+       request_failure(spec: "spec/requests/reader_completion_spec.rb", line: 18,
+                       message: Messages.http_status(expected: 200, actual: 404)),
+       request_failure(spec: "spec/requests/reader_layout_spec.rb", line: 44,
+                       message: Messages.http_status_class(expected: "redirect", actual: 404))]
+    end
+
+    it "names the shared symptom" do
+      expect(markdown).to include("### R1. Unexpected 404 (Not Found) responses -- 3 examples across 3 signatures")
+    end
+
+    it "shows the variants the symptom took" do
+      expect(markdown).to include("- Symptoms: `expected 200, got 404` (2), `expected redirect, got 404` (1)")
+    end
+
+    it "lists the affected spec files" do
+      expect(markdown).to include("`spec/requests/checkpoint_spec.rb`", "`spec/requests/reader_layout_spec.rb`")
+    end
+
+    it "points at the signature sections that carry it" do
+      expect(markdown).to include("- Signatures: #1, #2, #3")
+    end
+
+    # A cluster is a hint, not a verdict, and the report has to say which.
+    it "says plainly that a cluster is weaker than a signature" do
+      expect(markdown).to include("not a proven identical failure", "remain authoritative")
+    end
+
+    it "counts clusters in the header" do
+      expect(markdown).to include("1 related cluster")
+    end
+
+    it "comes before the signature index, because it is the higher-level view" do
+      expect(markdown.index("## Related failures")).to be < markdown.index("## Signatures")
+    end
+
+    it "is omitted entirely when nothing relates" do
+      quiet = render_markdown(build_report([capybara_failure]), config: config)
+
+      expect(quiet).not_to include("## Related failures", "related cluster")
+    end
+
+    it "caps how many clusters are rendered" do
+      many = (0..12).flat_map do |i|
+        [request_failure(spec: "spec/requests/a#{i}_spec.rb", line: 1,
+                         message: Messages.http_status(expected: 200, actual: 400 + i)),
+         request_failure(spec: "spec/requests/b#{i}_spec.rb", line: 2,
+                         message: Messages.http_status(expected: 201, actual: 400 + i))]
+      end
+      markdown = render_markdown(build_report(many), config: signal_config(max_clusters: 3))
+
+      expect(markdown).to include("10 further related clusters not rendered")
+    end
+
+    it "caps how many spec files it lists" do
+      many = (0..9).map do |i|
+        request_failure(spec: "spec/requests/s#{i}_spec.rb", line: i + 1,
+                        message: Messages.http_status(expected: 200 + i, actual: 404))
+      end
+      markdown = render_markdown(build_report(many), config: signal_config(max_cluster_specs: 4))
+
+      expect(markdown).to include("and 6 more")
+    end
+  end
+
+  describe "a giant HTML response" do
+    subject(:markdown) do
+      failure = build_failure(
+        config: config, backtrace: Backtraces.rack_middleware_stack,
+        exception_class: "RSpec::Expectations::ExpectationNotMetError",
+        description: "Reader completion shows the finished notice",
+        message: Messages.body_include_with_diff(expected: "You've finished this document.",
+                                                 actual: Messages.rails_exception_page)
+      )
+      render_markdown(build_report([failure]), config: config)
+    end
+
+    it "keeps the expected value" do
+      expect(markdown).to include("You've finished this document.")
+    end
+
+    it "replaces the markup with what it was" do
+      expect(markdown).to include("Title: Action Controller: Exception caught",
+                                  "Message: undefined method 'progress' for nil")
+    end
+
+    it "shows none of the page's CSS" do
+      expect(markdown).not_to include("font-family", "<style")
+    end
+
+    it "leaves the whole report short" do
+      expect(markdown.lines.size).to be < 60
+    end
+  end
+
   describe "size" do
+    # The related section exists to save the reader from reading every
+    # signature. It would be a poor trade if it cost a section's worth of prose.
+    it "spends only a small part of a large report on related failures" do
+      failures = (0..19).map do |i|
+        build_failure(config: config, exception_class: "RSpec::Expectations::ExpectationNotMetError",
+                      backtrace: Backtraces.expectation_not_met(spec: "spec/r#{i}_spec.rb", line: i + 1),
+                      description: "example #{i}", message: Messages.http_status(expected: 200 + i, actual: 404))
+      end
+      lines = render_markdown(build_report(failures), config: config).lines
+      section = lines.index { |line| line.start_with?("## Signatures") } -
+                lines.index { |line| line.start_with?("## Related failures") }
+
+      expect(section).to be < (lines.size / 10)
+    end
+
     it "keeps a large, highly repetitive run small" do
       failures = Array.new(43) do |i|
         capybara_failure(spec: "spec/system/s#{i % 7}_spec.rb", line: (i % 7) * 10)

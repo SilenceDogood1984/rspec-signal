@@ -10,13 +10,18 @@ module RSpec
       # Backtrace reduction budgets.
       attr_accessor :max_frames, :max_external_context, :max_project_frames, :fallback_frames
 
-      # Message budgets.
-      attr_accessor :max_message_lines, :max_diff_lines
+      # Message budgets. `max_html_chars` is the smallest HTML blob replaced by
+      # a summary; `reduce_html` turns that off entirely.
+      attr_accessor :max_message_lines, :max_diff_lines, :reduce_html, :max_html_chars
 
       # Report budgets. `max_affected_examples` caps the per-group list of other
       # failing examples; `max_groups` caps how many signatures are rendered in
       # full (nil means all).
       attr_accessor :max_affected_examples, :max_groups
+
+      # Related-failure clustering. `relate_failures` turns the whole layer off;
+      # the budgets cap how much of it reaches the Markdown report.
+      attr_accessor :relate_failures, :max_clusters, :max_cluster_specs
 
       # Secret scrubbing.
       attr_accessor :redact, :redaction_patterns, :redaction_filter
@@ -42,6 +47,9 @@ module RSpec
 
       def enabled? = !!@enabled
       def redact?  = !!@redact
+
+      # Nil means "leave HTML alone", which is what {Message} expects.
+      def html_threshold = reduce_html ? max_html_chars : nil
 
       def root
         @root ||= File.expand_path(@project_root || default_root)
@@ -95,11 +103,16 @@ module RSpec
         @fallback_frames       = 6
         @max_message_lines     = 30
         @max_diff_lines        = 20
+        @max_html_chars        = Message::DEFAULT_HTML_THRESHOLD
         @max_affected_examples = 25
         @max_groups            = nil
+        @max_clusters          = 10
+        @max_cluster_specs     = 6
       end
 
       def default_artifacts
+        @reduce_html        = true
+        @relate_failures    = true
         @redact             = true
         @redaction_patterns = []
         @redaction_filter   = nil

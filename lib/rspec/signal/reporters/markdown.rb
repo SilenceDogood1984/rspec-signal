@@ -25,6 +25,9 @@ module RSpec
         def render
           sections = [header]
           sections << outside_examples_notice
+          # Themes before the inventory: what an agent needs first is the
+          # possibility that thirty-five signatures are five problems.
+          sections << related_section
           sections << index if @report.group_count > 1
           sections.concat(rendered_groups)
           sections << footer
@@ -42,16 +45,18 @@ module RSpec
         end
 
         def headline
-          parts = ["#{number(@report.example_count)} #{plural(@report.example_count, "example")}",
-                   "#{number(@report.failure_count)} #{plural(@report.failure_count, "failure")}"]
+          parts = [quantity(@report.example_count, "example"), quantity(@report.failure_count, "failure")]
           parts << "#{number(@report.pending_count)} pending" if @report.pending_count.positive?
           parts << "#{number(@report.group_count)} distinct #{plural(@report.group_count, "signature")}"
-          if @report.errors_outside_examples.positive?
-            parts << "#{number(@report.errors_outside_examples)} " \
-                     "#{plural(@report.errors_outside_examples, "error")} outside examples"
-          end
+          parts << "#{number(@report.cluster_count)} related #{plural(@report.cluster_count, "cluster")}" \
+            if @report.cluster_count.positive?
+          parts << outside_examples_count if @report.errors_outside_examples.positive?
           "**#{parts.join(" | ")}**"
         end
+
+        def outside_examples_count = "#{quantity(@report.errors_outside_examples, "error")} outside examples"
+
+        def quantity(value, word) = "#{number(value)} #{plural(value, word)}"
 
         def reduction_line
           "Backtraces reduced from #{number(@report.total_frames)} to " \
@@ -82,6 +87,16 @@ module RSpec
            "| # | Examples | Exception | Raised in | Message |",
            "|--:|---------:|-----------|-----------|---------|",
            *rows].join("\n")
+        end
+
+        def related_section
+          RelatedFailures.new(@report.clusters, signature_positions, @config).render
+        end
+
+        # Cluster members point back at the numbered sections below, so the
+        # reader can go straight from a symptom to the failures carrying it.
+        def signature_positions
+          @signature_positions ||= @report.groups.each_with_index.to_h { |group, i| [group.fingerprint.digest, i + 1] }
         end
 
         # A `before(:suite)` blow-up produces no failed examples at all. RSpec

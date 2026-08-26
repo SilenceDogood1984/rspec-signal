@@ -163,6 +163,7 @@ human.
 tmp/rspec-signal/
   summary.md    the report -- this is the one you hand over
   signal.json   the same data, machine readable, for CI and tooling
+                (`signatures` and `related` mirror the two grouping layers)
   full.txt      the original unreduced RSpec output, kept as an escape hatch
   .gitignore    written automatically; artifacts can contain application data
 ```
@@ -273,6 +274,110 @@ frames, plus every affected example's location. Groups are ordered largest first
 with ties broken by run order, so two runs of the same suite produce byte-identical
 reports.
 
+Failures that are clearly connected but correctly *not* identical are handled by a
+separate, looser layer — see [Related failure clustering](#related-failure-clustering).
+
+## Related failure clustering
+
+Exact signatures are conservative on purpose: they never claim two failures are
+the same failure unless they really are. That leaves a gap the real world fills
+constantly — a dozen request specs that each wanted a different thing and all got
+a 404, or one missing `data-testid` reported by `find` in one spec and by
+`have_css` in another. Different signatures, obviously one problem.
+
+So there is a second, deliberately looser layer. Each failure is scanned for **one
+strong diagnostic symptom**, and failures sharing a symptom are reported together:
+
+```markdown
+## Related failures
+
+Failures sharing one diagnostic symptom across more than one signature. Weaker than
+a signature: a likely common cause, not a proven identical failure. The signatures
+below remain authoritative.
+
+### R1. Unexpected 404 (Not Found) responses -- 12 examples across 12 signatures
+
+- Symptoms: `expected 200, got 404` (6), `expected redirect, got 404` (6)
+- Specs: `spec/requests/checkpoint_responses_controller_spec.rb`, ... and 6 more
+- Signatures: #3, #4, #5, #6, #7, #8, #9, #10, and 4 more
+
+### R2. Missing css selector `[data-testid="reader-progress"] span` -- 4 examples across 2 signatures
+
+- Specs: `spec/system/reader_progress_spec.rb`, `spec/system/reader_layout_spec.rb`, ...
+- Signatures: #1, #2
+```
+
+The symptoms, in the order they are tried:
+
+| Symptom | Cluster key | Example |
+|---------|-------------|---------|
+| **HTTP status** | the status that actually came back | `expected 200, got 404` and `expected redirect, got 404` cluster together; `got 500` does not |
+| **Route** | the path with identifiers masked, or the `_path` helper | `No route matches [GET] "/readers/:id/progress"` |
+| **Selector / page text** | the selector, compared exactly | `Unable to find css "x"` and `expected to find css "x" but there were no matches` cluster together |
+| **ActiveRecord** | the model, the validation sentence, or the missing column/table | `Couldn't find User` clusters with `Couldn't find User`, never with `Couldn't find Order` |
+| **Ruby error** | the method *and* its receiver, or the constant | `undefined method 'progress' for nil` |
+| **Exception class** | the class, only when namespaced | `PG::ConnectionBad`, `Errno::ECONNREFUSED` |
+
+### What stops it over-clustering
+
+Clusters are a hint, and a hint that fires too often is worse than none. Five rules
+hold the line:
+
+1. **A cluster needs two or more failures.**
+2. **A cluster needs two or more exact signatures.** If everything sharing a symptom
+   is already one signature, the signature section said it better, and repeating it
+   is pure noise. This is what keeps the section short.
+3. **Each failure joins at most one cluster** — the first symptom that matches, in
+   the order above. Nothing appears twice.
+4. **No similarity, ever.** Every symptom is anchored on a specific phrase from a
+   specific library. There is no fuzzy matching, no embedding, no threshold. A
+   failure that matches nothing has no symptom and joins nothing, which is the safe
+   direction to be wrong in.
+5. **Exception class is a last resort, and a narrow one.** It fires only for a
+   *namespaced* class, never for `RuntimeError`, `ArgumentError` or anything under
+   `RSpec::`, and never for a class an earlier symptom is responsible for — so a
+   `Capybara::ElementNotFound` whose message could not be parsed can never drag
+   unrelated selectors into one cluster.
+
+Ordering is deterministic: largest cluster first, then most signatures spanned, then
+run order.
+
+## Large HTML responses
+
+A request spec expecting one sentence and receiving a Rails exception page produces
+a diff several thousand lines long, and its first hundred lines are the exception
+page's own CSS — the one part of the response guaranteed to be identical for every
+failure in the suite. Capping it still spends the report's opening on stylesheet.
+
+When the actual value is bulk HTML, `rspec-signal` replaces it:
+
+```text
+Failure/Error: expect(response.body).to include("You've finished this document.")
+
+expected [HTML document] to include "You've finished this document."
+
+[HTML document: 6,371 lines, 284 KB -- markup omitted]
+  Title: Action Controller: Exception caught
+  Heading: NoMethodError in ReaderController#show
+  Message: undefined method 'progress' for nil
+```
+
+- The **expected value is never touched** — it is the small, useful half.
+- Detection is by shape: a `<!doctype html>`/`<html>` opening, or five or more tags
+  around structural elements. Both the one-enormous-inspected-line form and the
+  unified-diff form are handled.
+- `<script>`, `<style>` and comments are stripped **before** any text is read, so
+  CSS can never be mistaken for content.
+- Signals extracted: `<title>`, `<h1>`, `<h2>` or the first `<pre>`, falling back to
+  the leading visible text when a page has neither. On a Rails error page those are
+  the exception class and its message. Capybara's own `status_code` still appears
+  under **Browser state**.
+- HTML small enough to read is left exactly as it was (`config.max_html_chars`,
+  default 1500 characters).
+- No DOM parser, and no new dependency: regex only. It never has to be correct, only
+  useful, and it is handed broken markup by definition.
+- The untouched original is still written verbatim to `full.txt`.
+
 ## Configuration
 
 None is required. Everything below is optional, in `spec_helper.rb`:
@@ -292,9 +397,18 @@ RSpec::Signal.configure do |config|
   config.max_message_lines = 30
   config.max_diff_lines    = 20
 
+  # Large HTML responses (see "Large HTML responses").
+  config.reduce_html    = true
+  config.max_html_chars = 1500  # smallest HTML blob replaced by a summary
+
   # Report budgets.
   config.max_affected_examples = 25   # locations listed per group
   config.max_groups            = nil  # signatures rendered in full (nil = all)
+
+  # Related failure clustering (see "Related failure clustering").
+  config.relate_failures   = true
+  config.max_clusters      = 10  # clusters rendered in full (nil = all)
+  config.max_cluster_specs = 6   # spec files listed per cluster
 
   # Artifacts.
   config.write_json      = true
@@ -408,6 +522,14 @@ everything with `config.redaction_filter`, or turn scrubbing off with
   genuinely different bugs that raise the same exception with the same message from
   the same line will collapse into one signature. The affected-example list always
   shows you everything that was merged.
+- **Related clusters are a hint, not a diagnosis.** They say two failures share a
+  symptom, never that they share a cause; the report says so in those words. The
+  symptom list is finite, so a suite whose failures are worded in a way no extractor
+  recognises simply gets no clusters — a silence, not a wrong answer.
+- **HTML reduction reads markup with regexes.** It extracts the title, headings and
+  leading text of a page; it does not understand the page. A response whose useful
+  content is buried deep in the body will be summarised as an HTML document and
+  little more. `full.txt` still has all of it.
 - **No source packaging.** `rspec-signal` names files and lines; it does not embed
   source code. Agents working inside a repository can open the files themselves, and
   in v1 that is a better division of labour than guessing which snippets to inline.

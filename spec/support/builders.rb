@@ -24,7 +24,8 @@ module Builders
   end
 
   def build_message(lines, config: signal_config)
-    RSpec::Signal::Message.new(Array(lines), redactor: config.redactor, project: config.project)
+    RSpec::Signal::Message.new(Array(lines), redactor: config.redactor, project: config.project,
+                                             html_threshold: config.html_threshold)
   end
 
   # Builds a {RSpec::Signal::Failure} the same way {RSpec::Signal::FailureBuilder}
@@ -45,6 +46,8 @@ module Builders
       **rest
     )
   end
+
+  def build_clusters(failures) = RSpec::Signal::Clusterer.call(failures)
 
   def build_report(failures, **rest)
     RSpec::Signal::Report.new(

@@ -17,20 +17,32 @@ module RSpec
         [%r{(?<![\w/])(?:/tmp|/var/folders|/private/var/folders)/[\w./+-]+}, "<tmppath>"],
         [/\bid[:=]\s*\d+/i,                                             "id=<n>"],
         [/\b\d{4,}\b/,                                                  "<n>"],
-        [/:\d+:in\s+[`'][^'`]*['`]/,                                    ""]
+        [/:\d+:in\s+[`'][^'`]*['`]/,                                    ""],
+        # Diff hunk headers count lines; the lines themselves are already in
+        # the message, and the counts split otherwise identical failures.
+        [/@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/,                          "@@"],
+        # An HTML summary's size differs between two renderings of the same
+        # broken page; its title and headings do not, and those are the part
+        # worth fingerprinting.
+        [/\[HTML document:[^\]]*\]/,                                    "[HTML document]"]
       ].freeze
 
       MAX_FINGERPRINT_CHARS = 400
+
+      # Smallest HTML blob worth replacing with a summary. Below this the
+      # markup is short enough to read, and reading it is the point.
+      DEFAULT_HTML_THRESHOLD = 1_500
 
       attr_reader :lines
 
       # @param lines [Array<String>] message lines as RSpec presents them
       # @param redactor [Redactor]
       # @param project [Project]
-      def initialize(lines, redactor:, project:)
+      # @param html_threshold [Integer, nil] nil disables HTML reduction
+      def initialize(lines, redactor:, project:, html_threshold: DEFAULT_HTML_THRESHOLD)
         @redactor = redactor
         @project = project
-        @lines = trim(squeeze(normalize(lines)))
+        @lines = trim(squeeze(reduce_html(normalize(lines), html_threshold)))
       end
 
       def empty? = @lines.all?(&:empty?)
@@ -80,6 +92,18 @@ module RSpec
       end
 
       private
+
+      # Reduction happens once, here, so that every later stage -- the body,
+      # the headline in the index table, and the fingerprint -- sees the
+      # summary rather than six thousand lines of exception-page CSS. The
+      # original text is still written verbatim to `full.txt`.
+      def reduce_html(lines, threshold)
+        return lines unless threshold
+
+        HtmlSummary.reduce(lines, threshold: threshold)
+      rescue StandardError
+        lines
+      end
 
       def normalize(lines)
         Array(lines).flat_map { |line| split_lines(line) }

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-26
+
+Initial release.
+
 ### Added
 
 - `rspec-signal-parallel`, a quiet `parallel_tests` wrapper that isolates worker
@@ -36,17 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `config.relate_failures`, `config.max_clusters`, `config.max_cluster_specs`,
   `config.reduce_html` and `config.max_html_chars`.
 
-### Changed
-
-- Diff hunk headers and HTML summary sizes are normalized out of the fingerprint,
-  so a page one line longer is no longer a different failure.
-
-## [0.1.0] - 2026-08-26
-
-Initial release.
-
-### Added
-
 - `RSpec::Signal::Formatter`, installed automatically by `require "rspec/signal"`,
   which writes a compact failure report without displacing RSpec's default
   terminal formatter.
@@ -66,6 +59,11 @@ Initial release.
   browser console output, and the screenshot path Rails writes.
 - Credential scrubbing for auth headers, credential-shaped assignments, URL
   userinfo, and well-known token formats, with hooks for project-specific patterns.
+
+### Changed
+
+- Diff hunk headers and HTML summary sizes are normalized out of the fingerprint,
+  so a page one line longer is no longer a different failure.
 
 [Unreleased]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/SilenceDogood1984/rspec-signal/releases/tag/v0.1.0

@@ -287,10 +287,18 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.output).not_to include("Failures:", "Failed examples:")
     end
 
-    it "preserves a passing suite's zero exit status" do
-      project.write("spec/noisy_spec.rb", 'RSpec.describe("green") { it("passes") { expect(1).to eq(1) } }')
+    it "summarizes a passing suite and removes stale artifacts" do
+      project.run_signal
+      project.write("tmp/rspec-signal/full.txt", "stale output")
 
-      expect(project.run_signal.status).to eq(0)
+      project.write("spec/noisy_spec.rb", 'RSpec.describe("green") { it("passes") { expect(1).to eq(1) } }')
+      run = project.run_signal
+
+      expect(run.status).to eq(0)
+      expect(run.output).to include("1 examples, 0 failures")
+      expect(run.output).not_to include("Report:", "rspec-signal:")
+      stale_artifacts = %w[signal.md signal.json summary.md full.txt].select { |name| project.artifact?(name) }
+      expect(stale_artifacts).to be_empty
     end
 
     it "allows full output to be opted in" do

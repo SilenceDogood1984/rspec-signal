@@ -144,9 +144,15 @@ module RSpec
 
       def print_summary(result)
         return unless config.terminal_summary
-        return if @failures.empty? && result.summary_path.nil?
 
         current = report
+        if quiet_success?(result)
+          @output.puts
+          print_rspec_summary(current)
+          return
+        end
+        return if @failures.empty? && result.summary_path.nil?
+
         @output.puts
         print_rspec_summary(current) if RSpec::Signal.quiet_mode?
         @output.puts "rspec-signal: #{current.failure_count} " \
@@ -163,6 +169,10 @@ module RSpec
         @output.puts "#{current.example_count} examples, #{current.failure_count} failures, " \
                      "#{current.pending_count} pending"
         @output.puts
+      end
+
+      def quiet_success?(result)
+        RSpec::Signal.quiet_mode? && result.summary_path.nil?
       end
 
       def cluster_note(current)

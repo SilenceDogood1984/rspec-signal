@@ -103,7 +103,7 @@ RSpec.describe RSpec::Signal::Formatter do
       allow(output).to receive(:tty?).and_return(tty)
     end
 
-    context "on a TTY" do
+    context "when output is a TTY" do
       let(:tty) { true }
 
       it "repaints a bounded single-line bar from completed-example events" do

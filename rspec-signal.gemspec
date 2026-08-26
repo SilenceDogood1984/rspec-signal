@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   ]
   spec.require_paths = ["lib"]
   spec.bindir = "exe"
-  spec.executables = ["rspec-signal", "rspec-signal-parallel"]
+  spec.executables = %w[rspec-signal rspec-signal-parallel]
 
   spec.add_dependency "rspec-core", ">= 3.10", "< 4.0"
 end

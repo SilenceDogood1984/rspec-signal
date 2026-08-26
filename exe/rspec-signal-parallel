@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require "English"
 require "fileutils"
 require "securerandom"
 require "tmpdir"
@@ -20,10 +21,11 @@ ENV["RSPEC_SIGNAL_RUN_ID"] = run_id
 ENV["RSPEC_SIGNAL_RUN_REGISTRY"] = registry
 ENV["RSPEC_SIGNAL_QUIET"] = "1"
 ENV["PARALLEL_TEST_FIRST_IS_1"] = "true"
-ENV["SPEC_OPTS"] = [ENV.fetch("SPEC_OPTS", nil), "--require rspec/signal --format RSpec::Signal::Formatter"].compact.join(" ")
+signal_options = "--require rspec/signal --format RSpec::Signal::Formatter"
+ENV["SPEC_OPTS"] = [ENV.fetch("SPEC_OPTS", nil), signal_options].compact.join(" ")
 
 system(Gem.ruby, parallel_rspec, *ARGV)
-test_status = $?.exitstatus || 1
+test_status = $CHILD_STATUS.exitstatus || 1
 
 begin
   require "rspec/signal"
@@ -36,7 +38,10 @@ begin
   if result.write_result.summary_path
     puts "Report: #{RSpec::Signal::Writer.new(RSpec::Signal.configuration).relative(result.write_result.summary_path)}"
   end
-  warn "rspec-signal: warning: #{result.missing.size} worker artifacts were missing" if result.missing.any?
+  if result.missing.any?
+    warn "rspec-signal: warning: #{result.missing.size} worker artifacts were missing; report is incomplete"
+    test_status = 1
+  end
 rescue StandardError => e
   warn "rspec-signal: parallel report aggregation failed (#{e.class}: #{e.message})"
   test_status = 1 if test_status.zero?

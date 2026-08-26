@@ -58,9 +58,9 @@ class SandboxProject
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 
-  def run_signal_parallel(*args)
-    env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }
-    stdout, stderr, status = Open3.capture3(env, RbConfig.ruby, PARALLEL_EXECUTABLE, *args, chdir: root)
+  def run_signal_parallel(*args, env: {})
+    process_env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }.merge(env)
+    stdout, stderr, status = Open3.capture3(process_env, RbConfig.ruby, PARALLEL_EXECUTABLE, *args, chdir: root)
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 

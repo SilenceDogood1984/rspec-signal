@@ -184,6 +184,12 @@ partitions appear together in the final report. If `write_full` is enabled, the 
 deterministically builds one top-level `full.txt` from the worker payloads; workers
 never share that file.
 
+Workers also record the aggregation-relevant configuration used to reduce and render
+their results. The parent requires these settings to match across every worker rather
+than silently applying whichever worker happens to finish first. A mismatch fails the
+aggregation with a concise error, which usually indicates conditional configuration in
+the project's spec helper.
+
 Each run has a new ID and the merger only reads paths registered for that invocation,
 so abandoned or stale worker reports cannot enter a later report. The worker
 directories remain available for diagnosis. Missing registered artifacts and merge

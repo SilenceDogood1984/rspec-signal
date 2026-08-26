@@ -14,9 +14,10 @@ module RSpec
       end
 
       def call
-        paths = Dir[File.join(@registry, "*.path")].sort.map { |file| File.read(file).strip }
+        paths = Dir[File.join(@registry, "*.path")].map { |file| File.read(file).strip }
         documents, missing = paths.partition { |path| File.file?(path) }
         payloads = documents.map { |path| JSON.parse(File.read(path)) }
+        validate_configuration!(payloads)
         apply_configuration(payloads.first&.fetch("configuration", {}))
         report = aggregate(payloads)
         Result.new(
@@ -34,7 +35,8 @@ module RSpec
         Report.new(
           failures: load_failures(payloads),
           example_count: sum(summaries, "examples"), failure_count: sum(summaries, "failures"),
-          pending_count: sum(summaries, "pending"), duration: summaries.filter_map { |item| item["duration_seconds"] }.max,
+          pending_count: sum(summaries, "pending"),
+          duration: summaries.filter_map { |item| item["duration_seconds"] }.max,
           environment: payloads.first&.fetch("environment", {}) || {},
           errors_outside_examples: sum(summaries, "errors_outside_examples"), relate_failures: @config.relate_failures
         )
@@ -85,7 +87,14 @@ module RSpec
 
       def sum(items, key)
         number = items.sum { |item| item.fetch(key, 0).to_f }
-        number % 1 == 0 ? number.to_i : number
+        (number % 1).zero? ? number.to_i : number
+      end
+
+      def validate_configuration!(payloads)
+        configurations = payloads.map { |payload| payload.fetch("configuration", {}) }.uniq
+        return if configurations.size <= 1
+
+        raise ArgumentError, "workers reported inconsistent rspec-signal configuration"
       end
 
       def apply_configuration(values)

@@ -35,11 +35,27 @@ RSpec.describe RSpec::Signal::ParallelMerger do
     expect(result.report.example_count).to eq(1)
   end
 
-  def write_worker(worker, examples:, failures:)
+  it "rejects corrupt worker JSON" do
+    path = File.join(registry, "worker-1.json")
+    File.write(path, "{corrupt")
+    File.write(File.join(registry, "1.path"), path)
+
+    expect { described_class.new(registry: registry).call }.to raise_error(JSON::ParserError)
+  end
+
+  it "rejects inconsistent worker configuration" do
+    write_worker("1", examples: 1, failures: [], configuration: { "max_groups" => 1 })
+    write_worker("2", examples: 1, failures: [], configuration: { "max_groups" => 2 })
+
+    expect { described_class.new(registry: registry).call }
+      .to raise_error(ArgumentError, /inconsistent rspec-signal configuration/)
+  end
+
+  def write_worker(worker, examples:, failures:, configuration: {})
     path = File.join(registry, "worker-#{worker}.json")
     data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,
                                            "pending" => 0 }, "failures" => failures,
-             "configuration" => {}, "environment" => {} }
+             "configuration" => configuration, "environment" => {} }
     File.write(path, JSON.generate(data))
     File.write(File.join(registry, "#{worker}.path"), path)
   end

@@ -17,8 +17,8 @@ RSpec.describe "a real rspec run", :integration do
       project.write(".rspec", "--require ./spec/spec_helper.rb\n--no-color\n")
       project.write("spec/example_spec.rb", <<~RUBY)
         RSpec.describe "CLI behavior" do
-          it("runs the first example", :some_tag) { expect(true).to be(true) }
-          it("runs the second example") { expect(true).to be(true) }
+          it("runs the first example", :some_tag) { File.write("executed.txt", "tagged\\n", mode: "a") }
+          it("runs the second example") { File.write("executed.txt", "untagged\\n", mode: "a") }
           it("honors project configuration", :excluded_by_project) { raise "must not run" }
         end
       RUBY
@@ -26,33 +26,35 @@ RSpec.describe "a real rspec run", :integration do
 
     it "discovers the same examples as ordinary RSpec with no positional arguments" do
       ordinary = project.run
+      ordinary_examples = project.recorded_examples
+      project.clear_recorded_examples
       signal = project.run_signal
 
       expect(ordinary.status).to eq(0)
       expect(signal.status).to eq(0)
       expect(ordinary.output).to include("2 examples, 0 failures")
-      expect(signal.output).to include("2 examples, 0 failures")
+      expect(project.recorded_examples).to contain_exactly(*ordinary_examples)
     end
 
     it "runs an explicit spec path" do
       run = project.run_signal("spec/example_spec.rb")
 
       expect(run.status).to eq(0)
-      expect(run.output).to include("2 examples, 0 failures")
+      expect(project.recorded_examples).to contain_exactly("tagged", "untagged")
     end
 
     it "supports file and line targeting" do
       run = project.run_signal("spec/example_spec.rb:2")
 
       expect(run.status).to eq(0)
-      expect(run.output).to include("1 example, 0 failures")
+      expect(project.recorded_examples).to eq(["tagged"])
     end
 
     it "passes ordinary RSpec options through unchanged" do
       run = project.run_signal("--tag", "some_tag")
 
       expect(run.status).to eq(0)
-      expect(run.output).to include("1 example, 0 failures")
+      expect(project.recorded_examples).to eq(["tagged"])
     end
 
     it "does not change ordinary RSpec failure status or output" do

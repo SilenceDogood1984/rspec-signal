@@ -61,6 +61,8 @@ class SandboxProject
   def artifact?(name) = File.file?(artifact(name))
   def read(name) = File.read(artifact(name))
   def json = JSON.parse(read("signal.json"))
+  def recorded_examples = File.readlines(File.join(root, "executed.txt"), chomp: true)
+  def clear_recorded_examples = FileUtils.rm_f(File.join(root, "executed.txt"))
 
   def cleanup = FileUtils.rm_rf(root)
 

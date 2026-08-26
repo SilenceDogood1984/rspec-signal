@@ -59,7 +59,7 @@ class SandboxProject
   def cleanup = FileUtils.rm_rf(root)
 
   Run = Struct.new(:stdout, :stderr, :status, :project, keyword_init: true) do
-    def summary = project.read("summary.md")
+    def summary = project.read("signal.md")
     def output = "#{stdout}\n#{stderr}"
   end
 end

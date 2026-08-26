@@ -117,7 +117,7 @@ module RSpec
         @redaction_patterns = []
         @redaction_filter   = nil
         @write_json         = true
-        @write_full         = true
+        @write_full         = false
         @write_gitignore    = true
         @capture_capybara   = true
         @capture_page_html  = false

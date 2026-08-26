@@ -17,12 +17,16 @@ RSpec.describe RSpec::Signal::Writer do
     let!(:result) { writer.write(build_report([failure])) }
 
     it "writes the summary" do
-      expect(File).to exist(File.join(writer.dir, "summary.md"))
-      expect(contents("summary.md")).to include("Capybara::ElementNotFound")
+      expect(File).to exist(File.join(writer.dir, "signal.md"))
+      expect(contents("signal.md")).to include("Capybara::ElementNotFound")
+    end
+
+    it "keeps summary.md as a compatibility copy" do
+      expect(contents("summary.md")).to eq(contents("signal.md"))
     end
 
     it "returns the summary path" do
-      expect(result.summary_path).to end_with("summary.md")
+      expect(result.summary_path).to end_with("signal.md")
     end
 
     it "writes machine-readable JSON alongside it" do
@@ -32,8 +36,8 @@ RSpec.describe RSpec::Signal::Writer do
       expect(parsed["signatures"].first["exception"]).to eq("Capybara::ElementNotFound")
     end
 
-    it "preserves the original unreduced output" do
-      expect(contents("full.txt")).to include("the original unreduced output")
+    it "does not preserve the original unreduced output by default" do
+      expect(File).not_to exist(File.join(writer.dir, "full.txt"))
     end
 
     it "keeps artifacts out of version control by default" do
@@ -49,11 +53,11 @@ RSpec.describe RSpec::Signal::Writer do
       expect(File).not_to exist(File.join(writer.dir, "signal.json"))
     end
 
-    it "can skip the full output" do
-      writer = described_class.new(signal_config(write_full: false, output_dir: config.output_dir))
+    it "can write the full output explicitly" do
+      writer = described_class.new(signal_config(write_full: true, output_dir: config.output_dir))
       writer.write(build_report([failure]))
 
-      expect(File).not_to exist(File.join(writer.dir, "full.txt"))
+      expect(contents("full.txt")).to include("the original unreduced output")
     end
 
     it "can skip the gitignore" do
@@ -71,7 +75,7 @@ RSpec.describe RSpec::Signal::Writer do
       writer.write(build_report([failure]))
       result = writer.write(build_report([]))
 
-      expect(File).not_to exist(File.join(writer.dir, "summary.md"))
+      expect(File).not_to exist(File.join(writer.dir, "signal.md"))
       expect(File).not_to exist(File.join(writer.dir, "signal.json"))
       expect(result.summary_path).to be_nil
       expect(result.cleaned.size).to eq(3)
@@ -81,7 +85,7 @@ RSpec.describe RSpec::Signal::Writer do
       result = writer.write(build_report([], errors_outside_examples: 1))
 
       expect(result.summary_path).not_to be_nil
-      expect(contents("summary.md")).to include("Errors outside examples")
+      expect(contents("signal.md")).to include("Errors outside examples")
     end
 
     it "does nothing when there was nothing to clean" do
@@ -91,12 +95,12 @@ RSpec.describe RSpec::Signal::Writer do
 
   describe "#relative" do
     it "renders paths the way you would type them" do
-      expect(writer.relative(File.join(config.root, "tmp/rspec-signal/summary.md")))
-        .to eq("tmp/rspec-signal/summary.md")
+      expect(writer.relative(File.join(config.root, "tmp/rspec-signal/signal.md")))
+        .to eq("tmp/rspec-signal/signal.md")
     end
 
     it "leaves paths outside the project alone" do
-      expect(writer.relative("/elsewhere/summary.md")).to eq("/elsewhere/summary.md")
+      expect(writer.relative("/elsewhere/signal.md")).to eq("/elsewhere/signal.md")
     end
   end
 
@@ -105,6 +109,6 @@ RSpec.describe RSpec::Signal::Writer do
     writer = described_class.new(signal_config(output_dir: nested))
     writer.write(build_report([failure]))
 
-    expect(File).to exist(File.join(nested, "summary.md"))
+    expect(File).to exist(File.join(nested, "signal.md"))
   end
 end

@@ -10,10 +10,11 @@ module RSpec
     # can never be handed a stale report that describes failures you already
     # fixed.
     class Writer
+      SIGNAL   = "signal.md"
       SUMMARY  = "summary.md"
       JSON     = "signal.json"
       FULL     = "full.txt"
-      MANAGED  = [SUMMARY, JSON, FULL].freeze
+      MANAGED  = [SIGNAL, SUMMARY, JSON, FULL].freeze
 
       Result = Struct.new(:summary_path, :written, :cleaned, keyword_init: true)
 
@@ -30,12 +31,16 @@ module RSpec
         write_gitignore
 
         written = []
-        written << write_file(SUMMARY, Reporters::Markdown.new(report, @config).render)
+        markdown = Reporters::Markdown.new(report, @config).render
+        written << write_file(SIGNAL, markdown)
+        # Cheap compatibility for users and CI jobs created before signal.md
+        # became the primary agent-facing artifact.
+        written << write_file(SUMMARY, markdown)
         written << write_file(JSON, Reporters::JsonReport.new(report, @config).render) if @config.write_json
         written << write_file(FULL, Reporters::FullOutput.new(report, @config).render) if @config.write_full
 
         stale = MANAGED - written.map { |path| File.basename(path) }
-        Result.new(summary_path: File.join(dir, SUMMARY), written: written, cleaned: remove(stale))
+        Result.new(summary_path: File.join(dir, SIGNAL), written: written, cleaned: remove(stale))
       end
 
       # Relative to the project root when possible, because that is what you

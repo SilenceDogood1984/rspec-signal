@@ -73,6 +73,15 @@ RSpec.describe RSpec::Signal::Formatter do
     it "says nothing" do
       expect(output.string).to eq("")
     end
+
+    context "in quiet mode" do
+      prepend_before { allow(RSpec::Signal).to receive(:quiet_mode?).and_return(true) }
+
+      it "prints the RSpec result without a report path" do
+        expect(output.string).to include("10 examples, 0 failures, 0 pending")
+        expect(output.string).not_to include("Report:", "rspec-signal:")
+      end
+    end
   end
 
   describe "when disabled" do

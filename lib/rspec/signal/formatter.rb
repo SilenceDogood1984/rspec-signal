@@ -144,9 +144,15 @@ module RSpec
 
       def print_summary(result)
         return unless config.terminal_summary
-        return if @failures.empty? && result.summary_path.nil?
 
         current = report
+        if RSpec::Signal.quiet_mode? && result.summary_path.nil?
+          @output.puts
+          print_rspec_summary(current)
+          return
+        end
+        return if @failures.empty? && result.summary_path.nil?
+
         @output.puts
         print_rspec_summary(current) if RSpec::Signal.quiet_mode?
         @output.puts "rspec-signal: #{current.failure_count} " \

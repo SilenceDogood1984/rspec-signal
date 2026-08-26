@@ -18,7 +18,7 @@ module RSpec
         documents, missing = paths.partition { |path| File.file?(path) }
         payloads = documents.map { |path| JSON.parse(File.read(path)) }
         validate_configuration!(payloads)
-        apply_configuration(payloads.first&.fetch("configuration", {}))
+        apply_configuration(payloads.first&.fetch("configuration", {}) || {})
         report = aggregate(payloads)
         Result.new(
           report: report,

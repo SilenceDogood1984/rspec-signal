@@ -51,6 +51,18 @@ RSpec.describe RSpec::Signal::ParallelMerger do
       .to raise_error(ArgumentError, /inconsistent rspec-signal configuration/)
   end
 
+  it "returns every registered path as missing when no worker artifact survives" do
+    %w[1 2].each do |worker|
+      File.write(File.join(registry, "#{worker}.path"), File.join(registry, "missing-#{worker}.json"))
+    end
+
+    result = described_class.new(registry: registry).call
+
+    expect(result.workers).to eq(0)
+    expect(result.missing.size).to eq(2)
+    expect(result.report.example_count).to eq(0)
+  end
+
   def write_worker(worker, examples:, failures:, configuration: {})
     path = File.join(registry, "worker-#{worker}.json")
     data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,

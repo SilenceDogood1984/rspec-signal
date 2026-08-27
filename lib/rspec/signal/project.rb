@@ -26,10 +26,13 @@ module RSpec
         # A release version, or the short SHA Bundler uses for git sources.
         (?:-(?<version>\d[\w.]*(?:-[a-z0-9]+)?|[0-9a-f]{12,40}))?
         /(?<rest>.*)\z
-      }x
+      }x.freeze
 
       # Matches ".../lib/ruby/3.3.0/json/common.rb" and ".../ruby/3.3.0/x86_64-linux/..."
-      STDLIB_PATH = %r{/lib/ruby/(?:\d+\.\d+\.\d+|site_ruby|vendor_ruby)/(?:[a-z0-9_]+-[a-z0-9_-]+/)?(?<rest>.*)\z}
+      STDLIB_PATH = %r{
+        /lib/ruby/(?:\d+\.\d+\.\d+|site_ruby|vendor_ruby)/
+        (?:[a-z0-9_]+-[a-z0-9_-]+/)?(?<rest>.*)\z
+      }x.freeze
 
       attr_reader :root
 
@@ -118,7 +121,9 @@ module RSpec
         rest
       end
 
-      def normalize_gem_name(name) = name.to_s.delete("-_")
+      def normalize_gem_name(name)
+        name.to_s.delete("-_")
+      end
 
       def compute_first_party(path)
         absolute = absolutize(path)

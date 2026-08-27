@@ -17,7 +17,9 @@ module RSpec
         self
       end
 
-      def size = @failures.size
+      def size
+        @failures.size
+      end
 
       # The failure shown in full. We pick the one carrying the most first-party
       # frames, because that is the one whose trace is most useful; ties break on
@@ -28,8 +30,13 @@ module RSpec
         end.first
       end
 
-      def exception_class = representative.exception_class
-      def message         = representative.message
+      def exception_class
+        representative.exception_class
+      end
+
+      def message
+        representative.message
+      end
 
       # Locations of every example in the group, in run order, deduplicated.
       def affected_locations

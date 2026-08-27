@@ -24,11 +24,25 @@ module RSpec
         self
       end
 
-      def failures = @members.map(&:failure)
-      def size     = @members.size
-      def kind     = @symptom.kind
-      def key      = @symptom.key
-      def label    = @symptom.label
+      def failures
+        @members.map(&:failure)
+      end
+
+      def size
+        @members.size
+      end
+
+      def kind
+        @symptom.kind
+      end
+
+      def key
+        @symptom.key
+      end
+
+      def label
+        @symptom.label
+      end
 
       # The distinct wordings the symptom took, most common first, ties broken
       # by the order they were seen so the list is stable.
@@ -46,7 +60,9 @@ module RSpec
         @signatures ||= failures.map { |failure| failure.fingerprint.digest }.uniq
       end
 
-      def signature_count = signatures.size
+      def signature_count
+        signatures.size
+      end
 
       def spec_files
         @spec_files ||= failures.map { |failure| failure.spec_location.sub(/:\d+\z/, "") }.uniq

@@ -5,7 +5,7 @@ module RSpec
     # The human-readable failure message, plus a normalized form used for
     # grouping.
     class Message
-      ANSI = /\e\[[0-9;]*[A-Za-z]/
+      ANSI = /\e\[[0-9;]*[A-Za-z]/.freeze
 
       # Volatile substrings that would otherwise split identical failures into
       # separate signatures.
@@ -50,7 +50,9 @@ module RSpec
         @cause_lines = trim(squeeze(reduce_html(normalize(cause_lines), html_threshold)))
       end
 
-      def empty? = @lines.all?(&:empty?) && @cause_lines.all?(&:empty?)
+      def empty?
+        @lines.all?(&:empty?) && @cause_lines.all?(&:empty?)
+      end
 
       def text
         return @lines.join("\n") if @cause_lines.empty?

@@ -8,18 +8,18 @@ Gem::Specification.new do |spec|
   spec.authors = ["Chad Snow"]
   spec.email   = ["chaddsnow@gmail.com"]
 
-  spec.summary = "Turn noisy RSpec failures into compact, high-signal reports for AI coding agents."
+  spec.summary = "Token-efficient RSpec failure output for AI coding agents."
   spec.description = <<~DESC
-    rspec-signal is a deterministic context-reduction layer between RSpec and an AI
-    coding agent. It collapses framework and runtime backtrace plumbing, keeps
-    first-party frames plus the small amount of library context that explains the
-    failing operation, groups repeated failures into distinct signatures, and writes
-    a compact Markdown report you can hand straight to a coding agent.
+    rspec-signal turns noisy RSpec failures into compact, token-efficient diagnostic
+    reports for AI coding agents. It removes repetitive framework backtraces, preserves
+    the application and library context that matters, groups related failures, and
+    writes a focused Markdown report instead of forcing an agent to consume thousands
+    of lines of raw RSpec output.
   DESC
 
   spec.homepage = "https://github.com/SilenceDogood1984/rspec-signal"
   spec.license  = "MIT"
-  spec.required_ruby_version = ">= 3.1.0"
+  spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata["source_code_uri"]   = spec.homepage
   spec.metadata["changelog_uri"]     = "#{spec.homepage}/blob/main/CHANGELOG.md"

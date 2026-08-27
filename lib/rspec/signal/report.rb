@@ -31,10 +31,21 @@ module RSpec
         []
       end
 
-      def group_count   = groups.size
-      def cluster_count = clusters.size
-      def any_failures? = !failures.empty?
-      def seed_used? = !!@seed_used
+      def group_count
+        groups.size
+      end
+
+      def cluster_count
+        clusters.size
+      end
+
+      def any_failures?
+        !failures.empty?
+      end
+
+      def seed_used?
+        !!@seed_used
+      end
 
       # Backtrace frames dropped across the whole run. This is the number that
       # makes the reduction visible.
@@ -46,7 +57,9 @@ module RSpec
         @total_frames ||= failures.sum { |failure| failure.reduced.total }
       end
 
-      def kept_frames = total_frames - omitted_frames
+      def kept_frames
+        total_frames - omitted_frames
+      end
 
       def to_h
         {

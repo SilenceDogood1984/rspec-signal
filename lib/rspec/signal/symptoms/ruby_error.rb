@@ -11,8 +11,8 @@ module RSpec
       # `#name for nil` and `#total for nil` stay apart.
       module RubyError
         # Ruby 3.4 quotes with `'x'`, earlier versions with `` `x' ``.
-        UNDEFINED_METHOD = /undefined method [`'"](?<name>[^'"`]+)['"`] for (?:an instance of )?(?<receiver>\S+)/
-        UNINITIALIZED    = /uninitialized constant (?<constant>[A-Z]\w*(?:::\w+)*)/
+        UNDEFINED_METHOD = /undefined method [`'"](?<name>[^'"`]+)['"`] for (?:an instance of )?(?<receiver>\S+)/.freeze
+        UNINITIALIZED    = /uninitialized constant (?<constant>[A-Z]\w*(?:::\w+)*)/.freeze
 
         module_function
 

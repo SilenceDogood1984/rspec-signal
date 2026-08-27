@@ -36,7 +36,9 @@ module RSpec
 
       # Extractor patterns are written against a single line: RSpec wraps the
       # same sentence differently depending on matcher and terminal width.
-      def one_line(text) = text.to_s.gsub(/\s+/, " ").strip
+      def one_line(text)
+        text.to_s.gsub(/\s+/, " ").strip
+      end
     end
   end
 end

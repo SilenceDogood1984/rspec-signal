@@ -11,7 +11,9 @@ RSpec.describe RSpec::Signal::Writer do
 
   after { FileUtils.rm_rf(config.output_path) }
 
-  def contents(name) = File.read(File.join(writer.dir, name))
+  def contents(name)
+    File.read(File.join(writer.dir, name))
+  end
 
   describe "with failures" do
     let!(:result) { writer.write(build_report([failure])) }

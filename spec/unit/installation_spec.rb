@@ -11,7 +11,9 @@ RSpec.describe "RSpec::Signal.install!" do
     RSpec::Signal.reset!
   end
 
-  def formatter_classes = loader.formatters.map(&:class)
+  def formatter_classes
+    loader.formatters.map(&:class)
+  end
 
   it "registers the formatter" do
     RSpec::Signal.install!(rspec_config)

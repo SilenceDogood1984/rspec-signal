@@ -19,7 +19,7 @@ module RSpec
           (?::(?<line>\d+))?
           (?::in\s+[`'](?<label>.*)['`])?
           \s*\z
-        /x
+        /x.freeze
 
         module_function
 

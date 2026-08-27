@@ -46,7 +46,7 @@ module RSpec
       end
 
       def run_directories(paths)
-        paths.filter_map { |path| File.dirname(path, 2) if path.include?("/workers/") }.uniq
+        paths.filter_map { |path| File.dirname(File.dirname(path)) if path.include?("/workers/") }.uniq
       end
 
       def aggregate(payloads)

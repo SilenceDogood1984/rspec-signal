@@ -19,7 +19,7 @@ module RSpec
         (?:api[_-]?key|secret[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key|
            secret|password|passwd|pwd|token|auth[_-]?token|access[_-]?token|refresh[_-]?token|
            session[_-]?id|csrf|cookie|authorization|credentials?)
-      /xi
+      /xi.freeze
 
       DEFAULT_PATTERNS = [
         # Authorization: Bearer xyz / Basic xyz
@@ -52,7 +52,9 @@ module RSpec
         @filter = filter
       end
 
-      def enabled? = @enabled
+      def enabled?
+        @enabled
+      end
 
       # @param text [String, nil]
       # @return [String, nil]

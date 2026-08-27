@@ -70,7 +70,9 @@ RSpec.describe RSpec::Signal::Message do
   end
 
   describe "#normalized" do
-    def normalized(text) = build_message([text]).normalized
+    def normalized(text)
+      build_message([text]).normalized
+    end
 
     it "masks object addresses" do
       expect(normalized("#<User:0x00007f9a1c0b2d48>")).to eq(normalized("#<User:0x00007fbb220c9910>"))

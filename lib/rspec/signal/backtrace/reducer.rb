@@ -7,19 +7,25 @@ module RSpec
     module Backtrace
       # A gap standing in for frames that were dropped.
       Gap = Struct.new(:count, :kind, keyword_init: true) do # rubocop:disable Lint/StructNewOverride
-        def frame? = false
+        def frame?
+          false
+        end
 
         def to_s
           noun = kind == :framework ? "framework/runtime" : "library"
           "[#{count} #{noun} frame#{"s" unless count == 1} omitted]"
         end
 
-        def to_h = { omitted: count, kind: kind.to_s }
+        def to_h
+          { omitted: count, kind: kind.to_s }
+        end
       end
 
       # Frames and gaps are rendered side by side, so both answer `frame?`.
       class Frame
-        def frame? = true
+        def frame?
+          true
+        end
       end
 
       # The result of reducing one backtrace.
@@ -33,22 +39,44 @@ module RSpec
           @fallback = fallback
         end
 
-        def frames         = entries.select(&:frame?)
-        def project_frames = frames.select(&:project?)
-        def kept_count     = frames.size
-        def fallback?      = @fallback
-        def empty?         = frames.empty?
+        def frames
+          entries.select(&:frame?)
+        end
 
-        def omitted_count = omitted.values.sum
+        def project_frames
+          frames.select(&:project?)
+        end
+
+        def kept_count
+          frames.size
+        end
+
+        def fallback?
+          @fallback
+        end
+
+        def empty?
+          frames.empty?
+        end
+
+        def omitted_count
+          omitted.values.sum
+        end
 
         # The frame that best identifies where this blew up: the innermost frame
         # that is not test-runner plumbing.
-        def culprit = frames.first
+        def culprit
+          frames.first
+        end
 
         # The innermost first-party frame — what the agent should open first.
-        def primary_location = project_frames.first
+        def primary_location
+          project_frames.first
+        end
 
-        def to_a = entries.map(&:to_s)
+        def to_a
+          entries.map(&:to_s)
+        end
       end
 
       # Reduces a full backtrace to the frames that carry diagnostic value.
@@ -74,7 +102,7 @@ module RSpec
         SCORE_LIBRARY_CALLER   = 60  # library frame that called into first-party code
 
         # Labels that name no method: delegation shims and block frames.
-        ANONYMOUS_LABEL = /\A(?:block\s|<(?:top|module|class|main)\b|rescue in\b|ensure in\b)/
+        ANONYMOUS_LABEL = /\A(?:block\s|<(?:top|module|class|main)\b|rescue in\b|ensure in\b)/.freeze
 
         def initialize(max_frames: 12, max_external_context: 3, max_project_frames: 8, fallback_frames: 6)
           @max_frames = max_frames

@@ -16,7 +16,9 @@ module RSpec
     #   label   the cluster heading, already human-readable
     #   detail  this failure's own wording of the symptom, for the symptom list
     Symptom = Struct.new(:kind, :key, :label, :detail, keyword_init: true) do
-      def to_h = { kind: kind, key: key, label: label, detail: detail }
+      def to_h
+        { kind: kind, key: key, label: label, detail: detail }
+      end
     end
   end
 end

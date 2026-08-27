@@ -12,7 +12,7 @@ module RSpec
       # examples wanted 200 and others wanted a redirect.
       module HttpStatus
         # One side of a status mismatch: `404`, `:not_found`, `:ok (200)`.
-        CODE = /:?[\w-]+(?: \(\d{3}\))?/
+        CODE = /:?[\w-]+(?: \(\d{3}\))?/.freeze
 
         PATTERNS = [
           # rspec-rails `have_http_status(200)` / `have_http_status(:ok)`
@@ -45,8 +45,10 @@ module RSpec
 
         module_function
 
-        GENERIC_EXPECTATION = /expected:\s*(?<expected>\d{3})\s+got:\s*(?<actual>\d{3})/i
-        STATUS_EXPRESSION = /(?:response\s*\.\s*status|response\s*\.\s*status_code|response\s*\[\s*:status\s*\])/i
+        GENERIC_EXPECTATION = /expected:\s*(?<expected>\d{3})\s+got:\s*(?<actual>\d{3})/i.freeze
+        STATUS_EXPRESSION = /
+          (?:response\s*\.\s*status|response\s*\.\s*status_code|response\s*\[\s*:status\s*\])
+        /ix.freeze
 
         def call(failure, text)
           match = PATTERNS.filter_map { |pattern| pattern.match(text) }.first

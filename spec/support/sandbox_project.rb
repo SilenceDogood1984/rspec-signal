@@ -67,17 +67,41 @@ class SandboxProject
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 
-  def artifact(name) = File.join(root, "tmp/rspec-signal", name)
-  def artifact?(name) = File.file?(artifact(name))
-  def read(name) = File.read(artifact(name))
-  def json = JSON.parse(read("signal.json"))
-  def recorded_examples = File.readlines(File.join(root, "executed.txt"), chomp: true)
-  def clear_recorded_examples = FileUtils.rm_f(File.join(root, "executed.txt"))
+  def artifact(name)
+    File.join(root, "tmp/rspec-signal", name)
+  end
 
-  def cleanup = FileUtils.rm_rf(root)
+  def artifact?(name)
+    File.file?(artifact(name))
+  end
+
+  def read(name)
+    File.read(artifact(name))
+  end
+
+  def json
+    JSON.parse(read("signal.json"))
+  end
+
+  def recorded_examples
+    File.readlines(File.join(root, "executed.txt"), chomp: true)
+  end
+
+  def clear_recorded_examples
+    FileUtils.rm_f(File.join(root, "executed.txt"))
+  end
+
+  def cleanup
+    FileUtils.rm_rf(root)
+  end
 
   Run = Struct.new(:stdout, :stderr, :status, :project, keyword_init: true) do
-    def summary = project.read("signal.md")
-    def output = "#{stdout}\n#{stderr}"
+    def summary
+      project.read("signal.md")
+    end
+
+    def output
+      "#{stdout}\n#{stderr}"
+    end
   end
 end

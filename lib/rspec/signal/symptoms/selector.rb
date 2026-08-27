@@ -18,17 +18,17 @@ module RSpec
         TYPES = "css|xpath|field|link or button|link|button|select box|checkbox|" \
                 "radio button|file field|fillable field|element|selector|table"
         # The selector as Capybara printed it: inspected, or a bare token.
-        TARGET = /"(?:[^"\\]|\\.)*"|\S+/
+        TARGET = /"(?:[^"\\]|\\.)*"|\S+/.freeze
         VISIBILITY = "(?:visible |invisible )?"
 
         # `find(...)` and friends raise Capybara::ElementNotFound.
-        UNABLE = /Unable to find #{VISIBILITY}(?<type>#{TYPES})\s+(?<target>#{TARGET})/i
+        UNABLE = /Unable to find #{VISIBILITY}(?<type>#{TYPES})\s+(?<target>#{TARGET})/i.freeze
         # `expect(page).to have_css(...)` fails the matcher instead, with a
         # different class and a different sentence for the same missing node.
         NO_MATCHES = Regexp.new("expected to find #{VISIBILITY}(?<type>#{TYPES})\\s+(?<target>#{TARGET})" \
                                 ".{0,200}?but there were no matches", Regexp::IGNORECASE)
         # Page text is not a selector, but it goes missing for the same reasons.
-        TEXT = /(?:Unable to find|expected to find) text (?<target>#{TARGET})/i
+        TEXT = /(?:Unable to find|expected to find) text (?<target>#{TARGET})/i.freeze
 
         module_function
 
@@ -65,7 +65,9 @@ module RSpec
           text.gsub(/\s+/, " ").strip
         end
 
-        def safe(target) = target.tr("`", "'")
+        def safe(target)
+          target.tr("`", "'")
+        end
       end
     end
   end

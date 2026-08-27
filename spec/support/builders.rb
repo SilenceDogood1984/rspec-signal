@@ -47,7 +47,9 @@ module Builders
     )
   end
 
-  def build_clusters(failures) = RSpec::Signal::Clusterer.call(failures)
+  def build_clusters(failures)
+    RSpec::Signal::Clusterer.call(failures)
+  end
 
   def build_report(failures, **rest)
     RSpec::Signal::Report.new(

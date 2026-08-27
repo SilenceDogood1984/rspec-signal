@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-27
+
+### Added
+
+- Ruby 2.7 support. `rspec-signal` now installs and runs on Ruby 2.7, 3.0, 3.1,
+  3.2, 3.3 and 3.4; CI exercises the full matrix, including `rspec-signal-parallel`
+  under `parallel_tests` on Ruby 2.7 with the last `parallel_tests` release that
+  still supports it (4.7.1 — 4.7.2 and later, and all of the 5.x series, require
+  Ruby 3.0+ or 3.1+).
+
+### Changed
+
+- `spec.required_ruby_version` lowered from `>= 3.1.0` to `>= 2.7.0`.
+- Endless method definitions (a Ruby 3.0+ feature) were rewritten as ordinary
+  `def...end` methods throughout the library and spec suite, with no behavior
+  change.
+- Gemspec summary and description now emphasize token-efficient RSpec output for
+  AI coding agents.
+
 ## [0.1.0] - 2026-08-26
 
 Initial release.
@@ -64,5 +83,6 @@ Initial release.
 - Diff hunk headers and HTML summary sizes are normalized out of the fingerprint,
   so a page one line longer is no longer a different failure.
 
-[Unreleased]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SilenceDogood1984/rspec-signal/releases/tag/v0.1.0

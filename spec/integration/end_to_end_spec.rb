@@ -72,8 +72,12 @@ RSpec.describe "a real rspec run", :integration do
       project.install_spec_helper
       project.write("lib/calculator.rb", <<~RUBY)
         class Calculator
-          def total(items) = items.sum { |item| price_of(item) }
-          def price_of(item) = item.fetch(:price)
+          def total(items)
+            items.sum { |item| price_of(item) }
+          end
+          def price_of(item)
+            item.fetch(:price)
+          end
         end
       RUBY
       project.write("spec/calculator_spec.rb", <<~RUBY)
@@ -145,7 +149,9 @@ RSpec.describe "a real rspec run", :integration do
       project.install_spec_helper
       project.write("app/services/subscription_creator.rb", <<~RUBY)
         class SubscriptionCreator
-          def call(email) = validate!(email)
+          def call(email)
+            validate!(email)
+          end
 
           def validate!(email)
             raise ArgumentError, "Validation failed: Email has already been taken" if email.to_s.empty?
@@ -180,11 +186,11 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "names the application code that raised" do
-      expect(run.summary).to include("app/services/subscription_creator.rb:5")
+      expect(run.summary).to include("app/services/subscription_creator.rb:7")
     end
 
     it "shows the application call chain" do
-      expect(run.summary).to include("app/services/subscription_creator.rb:2")
+      expect(run.summary).to include("app/services/subscription_creator.rb:3")
     end
   end
 
@@ -353,7 +359,9 @@ RSpec.describe "a real rspec run", :integration do
             raise RuntimeError, "import failed"
           end
 
-          def parse = { name: "x" }.fetch(:price)
+          def parse
+            { name: "x" }.fetch(:price)
+          end
         end
       RUBY
       project.write("spec/importer_spec.rb", <<~RUBY)
@@ -372,7 +380,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "points at the first-party frame inside the cause" do
-      expect(project.read("signal.md")).to include("at lib/importer.rb:8")
+      expect(project.read("signal.md")).to include("at lib/importer.rb:9")
     end
   end
 
@@ -403,7 +411,9 @@ RSpec.describe "a real rspec run", :integration do
       project.install_spec_helper
       project.write("app/reader.rb", <<~RUBY)
         class Reader
-          def self.current = nil
+          def self.current
+            nil
+          end
         end
       RUBY
       project.write("spec/reader_progress_spec.rb", <<~RUBY)
@@ -514,7 +524,9 @@ RSpec.describe "a real rspec run", :integration do
       project.install_spec_helper
       project.write("spec/many_spec.rb", <<~RUBY)
         RSpec.describe "a suite with one broken helper" do
-          def broken = raise(ArgumentError, "the shared helper is broken")
+          def broken
+            raise(ArgumentError, "the shared helper is broken")
+          end
 
           20.times do |i|
             it "example \#{i}" do

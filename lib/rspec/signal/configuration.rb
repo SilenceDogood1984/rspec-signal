@@ -45,11 +45,18 @@ module RSpec
         @terminal_summary = true
       end
 
-      def enabled? = !!@enabled
-      def redact?  = !!@redact
+      def enabled?
+        !!@enabled
+      end
+
+      def redact?
+        !!@redact
+      end
 
       # Nil means "leave HTML alone", which is what {Message} expects.
-      def html_threshold = reduce_html ? max_html_chars : nil
+      def html_threshold
+        reduce_html ? max_html_chars : nil
+      end
 
       def root
         @root ||= File.expand_path(@project_root || default_root)

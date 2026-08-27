@@ -10,10 +10,10 @@ module RSpec
       # cluster keys. A `RecordNotFound` for `User` and one for `Order` are two
       # different problems and stay apart.
       module Record
-        NOT_FOUND  = /Couldn't find (?<model>[A-Z]\w*(?:::\w+)*)/
-        VALIDATION = %r{Validation failed: (?<detail>.{1,120}?)(?=\s{2,}|\s+Caused by\b|\s+Failure/Error\b|\z)}
-        MISSING    = /(?<what>column|relation|table)\s+["'`]?(?<name>[\w."]+?)["'`]?\s+does not exist/i
-        SQLITE     = /no such (?<what>column|table):\s*(?<name>[\w.]+)/i
+        NOT_FOUND  = /Couldn't find (?<model>[A-Z]\w*(?:::\w+)*)/.freeze
+        VALIDATION = %r{Validation failed: (?<detail>.{1,120}?)(?=\s{2,}|\s+Caused by\b|\s+Failure/Error\b|\z)}.freeze
+        MISSING    = /(?<what>column|relation|table)\s+["'`]?(?<name>[\w."]+?)["'`]?\s+does not exist/i.freeze
+        SQLITE     = /no such (?<what>column|table):\s*(?<name>[\w.]+)/i.freeze
 
         module_function
 

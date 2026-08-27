@@ -8,7 +8,7 @@ module RSpec
     # the reduction, grouping and rendering stages testable without booting a
     # suite.
     class FailureBuilder
-      SCREENSHOT = /\[Screenshot(?:\s+Image)?\]:\s*(\S+)/i
+      SCREENSHOT = /\[Screenshot(?:\s+Image)?\]:\s*(\S+)/i.freeze
       MAX_CAUSE_DEPTH = 3
       MAX_CAUSE_MESSAGE_LINES = 5
       MAX_CAUSE_SCAN = 40

@@ -3,7 +3,9 @@
 RSpec.describe RSpec::Signal::Redactor do
   subject(:redactor) { described_class.new }
 
-  def scrub(text) = redactor.call(text)
+  def scrub(text)
+    redactor.call(text)
+  end
 
   describe "credentials it removes" do
     {

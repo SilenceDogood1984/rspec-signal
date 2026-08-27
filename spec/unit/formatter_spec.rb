@@ -154,14 +154,18 @@ RSpec.describe RSpec::Signal::Formatter do
   describe "resilience" do
     it "survives a notification it cannot read" do
       broken = Object.new
-      def broken.example = raise(NoMethodError, "nope")
+      def broken.example
+        raise(NoMethodError, "nope")
+      end
 
       expect { drive(broken) }.not_to raise_error
     end
 
     it "reports internal errors rather than hiding them" do
       broken = Object.new
-      def broken.example = raise(NoMethodError, "nope")
+      def broken.example
+        raise(NoMethodError, "nope")
+      end
       drive(broken)
 
       expect(output.string).to include("rspec-signal: 1 internal error")
@@ -169,7 +173,9 @@ RSpec.describe RSpec::Signal::Formatter do
 
     it "still writes a report for the failures it could read" do
       broken = Object.new
-      def broken.example = raise(NoMethodError, "nope")
+      def broken.example
+        raise(NoMethodError, "nope")
+      end
       drive(broken, failure_notification)
 
       expect(File.read(File.join(config.output_path, "signal.md"))).to include("an example")

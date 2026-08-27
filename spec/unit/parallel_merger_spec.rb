@@ -67,7 +67,9 @@ RSpec.describe RSpec::Signal::ParallelMerger do
   # merged they are pure interchange data with no further purpose, and one
   # can carry the full unreduced output of every failure it saw.
   describe "worker artifact cleanup" do
-    def run_directory(run_id) = File.join(output, "workers", run_id)
+    def run_directory(run_id)
+      File.join(output, "workers", run_id)
+    end
 
     def write_worker_in_run(run_id, worker, examples:, failures:)
       path = File.join(run_directory(run_id), worker, "signal.json")

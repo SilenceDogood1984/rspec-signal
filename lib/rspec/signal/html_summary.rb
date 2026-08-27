@@ -25,16 +25,16 @@ module RSpec
       MAX_FACT_CHARS = 160
       MAX_FACTS      = 4
 
-      DOCUMENT_START = /\A\s*(?:<!doctype\s+html|<html[\s>])/i
-      TAG            = %r{</?[a-z][a-z0-9]*(?:\s[^<>]*?)?/?>}im
-      STRUCTURAL     = /<(?:html|head|body|div|table|section|main|article|p)\b/i
-      QUOTED         = /"(?:[^"\\]|\\.)*"/m
-      DIFF_LINE      = /\A(\s*)([-+])(.*)\z/m
-      NOISE          = %r{<(script|style)\b[^>]*>.*?</\1>|<!--.*?-->}im
-      TITLE          = %r{<title[^>]*>(.*?)</title>}im
-      H1             = %r{<h1[^>]*>(.*?)</h1>}im
-      H2             = %r{<h2[^>]*>(.*?)</h2>}im
-      PRE            = %r{<pre[^>]*>(.*?)</pre>}im
+      DOCUMENT_START = /\A\s*(?:<!doctype\s+html|<html[\s>])/i.freeze
+      TAG            = %r{</?[a-z][a-z0-9]*(?:\s[^<>]*?)?/?>}im.freeze
+      STRUCTURAL     = /<(?:html|head|body|div|table|section|main|article|p)\b/i.freeze
+      QUOTED         = /"(?:[^"\\]|\\.)*"/m.freeze
+      DIFF_LINE      = /\A(\s*)([-+])(.*)\z/m.freeze
+      NOISE          = %r{<(script|style)\b[^>]*>.*?</\1>|<!--.*?-->}im.freeze
+      TITLE          = %r{<title[^>]*>(.*?)</title>}im.freeze
+      H1             = %r{<h1[^>]*>(.*?)</h1>}im.freeze
+      H2             = %r{<h2[^>]*>(.*?)</h2>}im.freeze
+      PRE            = %r{<pre[^>]*>(.*?)</pre>}im.freeze
 
       ESCAPES  = { "n" => "\n", "t" => "\t", "r" => "\r", "e" => "\e", '"' => '"', "\\" => "\\" }.freeze
       ENTITIES = { "amp" => "&", "lt" => "<", "gt" => ">", "quot" => '"',
@@ -195,7 +195,9 @@ module RSpec
         visible(match[1])
       end
 
-      def excerpt(body) = visible(body)
+      def excerpt(body)
+        visible(body)
+      end
 
       def visible(fragment)
         text = fragment.to_s.gsub(NOISE, " ").gsub(TAG, " ")
@@ -216,9 +218,13 @@ module RSpec
         "#{(byte_size / (1024.0 * 1024)).round(1)} MB"
       end
 
-      def number(value) = value.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
+      def number(value)
+        value.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
+      end
 
-      def plural(count, word) = count == 1 ? word : "#{word}s"
+      def plural(count, word)
+        count == 1 ? word : "#{word}s"
+      end
     end
   end
 end

@@ -12,11 +12,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["3.1", "3.2", "3.3", "3.4"]
+        ruby: ["2.7", "3.0", "3.1", "3.2", "3.3", "3.4"]
         rspec: ["3.13"]
         include:
-          # Oldest supported RSpec, to keep the formatter API assumptions honest.
+          # Oldest supported RSpec, to keep the formatter API assumptions honest
+          # on both the newest and the oldest Ruby we support.
           - ruby: "3.3"
+            rspec: "3.10"
+          - ruby: "2.7"
             rspec: "3.10"
     env:
       RSPEC_VERSION: ${{ matrix.rspec }}

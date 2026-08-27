@@ -23,8 +23,13 @@ RSpec.describe RSpec::Signal::Integrations::Capybara do
       class << self
         attr_accessor :stub_session
 
-        def current_session = stub_session
-        def current_driver = :selenium_chrome_headless
+        def current_session
+          stub_session
+        end
+
+        def current_driver
+          :selenium_chrome_headless
+        end
       end
     end)
     Capybara.stub_session = session

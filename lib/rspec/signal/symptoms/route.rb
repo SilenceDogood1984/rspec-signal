@@ -6,9 +6,9 @@ module RSpec
       # A route that does not exist -- the usual thing sitting behind a suite
       # full of unexplained 404s.
       module Route
-        NO_ROUTE = /No route matches (?<target>\[[A-Z]+\]\s*"[^"]*"|\{[^}]*\})/
+        NO_ROUTE = /No route matches (?<target>\[[A-Z]+\]\s*"[^"]*"|\{[^}]*\})/.freeze
         # `reader_progress_path` after the route was renamed or removed.
-        HELPER = /undefined (?:local variable or method|method) [`'"](?<helper>\w+_(?:path|url))['"`]/
+        HELPER = /undefined (?:local variable or method|method) [`'"](?<helper>\w+_(?:path|url))['"`]/.freeze
 
         module_function
 

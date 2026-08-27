@@ -10,9 +10,17 @@ module RSpec
       #   :external  - third-party library code (may explain the failing operation)
       #   :framework - test-runner / loader / CLI plumbing that never explains a bug
       Frame = Struct.new(:raw, :path, :line, :label, :kind, :display_path, :gem_name, keyword_init: true) do
-        def project?    = kind == :project
-        def external?   = kind == :external
-        def framework?  = kind == :framework
+        def project?
+          kind == :project
+        end
+
+        def external?
+          kind == :external
+        end
+
+        def framework?
+          kind == :framework
+        end
 
         def location
           line ? "#{display_path}:#{line}" : display_path

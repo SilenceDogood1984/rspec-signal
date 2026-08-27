@@ -28,7 +28,9 @@ module RSpec
         @seed_used = false
       end
 
-      def config = RSpec::Signal.configuration
+      def config
+        RSpec::Signal.configuration
+      end
 
       def start(notification)
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
@@ -139,8 +141,13 @@ module RSpec
         @progress_total = nil
       end
 
-      def builder = @builder ||= FailureBuilder.new(config)
-      def writer  = @writer ||= Writer.new(config)
+      def builder
+        @builder ||= FailureBuilder.new(config)
+      end
+
+      def writer
+        @writer ||= Writer.new(config)
+      end
 
       def print_summary(result)
         return unless config.terminal_summary

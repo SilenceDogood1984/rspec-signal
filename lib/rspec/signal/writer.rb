@@ -21,7 +21,9 @@ module RSpec
         @config = config
       end
 
-      def dir = @config.output_path
+      def dir
+        @config.output_path
+      end
 
       def write(report)
         return clean if report.failures.empty? && report.errors_outside_examples.zero?

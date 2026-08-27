@@ -45,7 +45,9 @@ module RSpec
           @shown ||= @config.max_clusters ? @clusters.first(@config.max_clusters) : @clusters
         end
 
-        def hidden = @clusters.size - shown.size
+        def hidden
+          @clusters.size - shown.size
+        end
 
         def truncation_note
           "_#{hidden} further related #{plural(hidden, "cluster")} not rendered (see `signal.json`)._"
@@ -90,11 +92,17 @@ module RSpec
           rendered.join(", ")
         end
 
-        def one_line(text) = text.to_s.gsub(/\s+/, " ").strip
+        def one_line(text)
+          text.to_s.gsub(/\s+/, " ").strip
+        end
 
-        def sentence(text) = text.to_s.sub(/\A[a-z]/, &:upcase)
+        def sentence(text)
+          text.to_s.sub(/\A[a-z]/, &:upcase)
+        end
 
-        def plural(count, word) = count == 1 ? word : "#{word}s"
+        def plural(count, word)
+          count == 1 ? word : "#{word}s"
+        end
       end
     end
   end

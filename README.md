@@ -631,11 +631,16 @@ everything with `config.redaction_filter`, or turn scrubbing off with
 
 ## Compatibility
 
-- Ruby 3.1+
+- Ruby 2.7, 3.0, 3.1, 3.2, 3.3, 3.4
 - RSpec 3.10+ (via `rspec-core`)
 - Rails, Capybara, ActiveRecord: optional
 
 The only runtime dependency is `rspec-core`.
+
+If you use `rspec-signal-parallel`, note that `parallel_tests` itself dropped
+Ruby 2.7 support after its 4.7.1 release; on Ruby 2.7, Bundler resolves it (and
+`rubocop`) to the newest release that still supports your Ruby version. Ruby
+3.0+ can use any current `parallel_tests` release.
 
 ## Development
 

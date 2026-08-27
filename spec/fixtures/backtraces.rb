@@ -11,9 +11,13 @@ module Backtraces
 
   module_function
 
-  def app(path, line, label) = "#{ROOT}/#{path}:#{line}:in `#{label}'"
+  def app(path, line, label)
+    "#{ROOT}/#{path}:#{line}:in `#{label}'"
+  end
 
-  def gem(name, version, path, line, label) = "#{GEMS}/#{name}-#{version}/lib/#{path}:#{line}:in `#{label}'"
+  def gem(name, version, path, line, label)
+    "#{GEMS}/#{name}-#{version}/lib/#{path}:#{line}:in `#{label}'"
+  end
 
   # The tail every RSpec failure drags along: hooks, the runner, the reporter,
   # Bundler and the CLI. Sixty-odd frames of pure plumbing.

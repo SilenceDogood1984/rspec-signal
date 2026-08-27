@@ -73,12 +73,16 @@ module RSpec
         false
       end
 
-      def installed? = !!@installed
+      def installed?
+        !!@installed
+      end
 
       # True when we added the formatter ourselves rather than the user asking
       # for it with `--format`. Only then do we put RSpec's default formatter
       # back, because only then did we displace it.
-      def auto_installed? = !!@auto_installed
+      def auto_installed?
+        !!@auto_installed
+      end
 
       # Explicit formatter selection happens after --require files are loaded,
       # so install! may initially look automatic. Detect the user's intent from
@@ -88,7 +92,7 @@ module RSpec
         return true if ENV["RSPEC_SIGNAL_QUIET"] == "1"
         return @quiet_mode_requested if defined?(@quiet_mode_requested)
 
-        @quiet_mode_requested = formatter_arguments.intersect?(["RSpec::Signal::Formatter", "signal"])
+        @quiet_mode_requested = !(formatter_arguments & ["RSpec::Signal::Formatter", "signal"]).empty?
       end
 
       # Adding any formatter suppresses RSpec's default one. When rspec-signal

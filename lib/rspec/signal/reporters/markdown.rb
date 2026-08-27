@@ -54,9 +54,13 @@ module RSpec
           "**#{parts.join(" | ")}**"
         end
 
-        def outside_examples_count = "#{quantity(@report.errors_outside_examples, "error")} outside examples"
+        def outside_examples_count
+          "#{quantity(@report.errors_outside_examples, "error")} outside examples"
+        end
 
-        def quantity(value, word) = "#{number(value)} #{plural(value, word)}"
+        def quantity(value, word)
+          "#{number(value)} #{plural(value, word)}"
+        end
 
         def reduction_line
           "Backtraces reduced from #{number(@report.total_frames)} to " \
@@ -141,7 +145,9 @@ module RSpec
            "> #{one_line(group.representative.description)}"].join("\n")
         end
 
-        def labelled(label, body) = "**#{label}**\n\n#{body}"
+        def labelled(label, body)
+          "**#{label}**\n\n#{body}"
+        end
 
         # The representative on its own, plus the whole signature when that is a
         # different command and short enough to be worth typing.
@@ -190,7 +196,9 @@ module RSpec
 
         # The same frame the fingerprint calls the culprit, so the gem label
         # beside a location always belongs to that location.
-        def culprit_frame(failure) = failure.frames.reject(&:framework?).first
+        def culprit_frame(failure)
+          failure.frames.reject(&:framework?).first
+        end
 
         def trace_lines(failure)
           entries = failure.reduced.entries.map(&:to_s)
@@ -248,23 +256,33 @@ module RSpec
           @groups ||= @config.max_groups ? @report.groups.first(@config.max_groups) : @report.groups
         end
 
-        def truncated_groups = @report.group_count - groups.size
+        def truncated_groups
+          @report.group_count - groups.size
+        end
 
         def fenced(lines, language = "text")
           [FENCE + language, *Array(lines), FENCE].join("\n")
         end
 
-        def one_line(text) = text.to_s.gsub(/\s+/, " ").strip
+        def one_line(text)
+          text.to_s.gsub(/\s+/, " ").strip
+        end
 
-        def escape(text) = text.to_s.gsub("|", "\\|")
+        def escape(text)
+          text.to_s.gsub("|", "\\|")
+        end
 
         def humanize(key)
           DIAGNOSTIC_LABELS.fetch(key.to_sym) { key.to_s.tr("_", " ").capitalize }
         end
 
-        def plural(count, word) = count == 1 ? word : "#{word}s"
+        def plural(count, word)
+          count == 1 ? word : "#{word}s"
+        end
 
-        def number(value) = value.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
+        def number(value)
+          value.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
+        end
       end
     end
   end

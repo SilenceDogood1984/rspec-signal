@@ -78,7 +78,9 @@ RSpec.describe "the agent workflow", :integration do
       project.write("lib/pricing.rb", <<~RUBY)
         module Pricing
           RATES = { monthly: 10 }.freeze
-          def self.rate_for(plan) = RATES.fetch(plan)
+          def self.rate_for(plan)
+            RATES.fetch(plan)
+          end
         end
       RUBY
       project.write("spec/pricing_spec.rb", <<~RUBY)
@@ -102,7 +104,9 @@ RSpec.describe "the agent workflow", :integration do
       project.write("lib/pricing.rb", <<~RUBY)
         module Pricing
           RATES = { monthly: 10, annual: 120 }.freeze
-          def self.rate_for(plan) = RATES.fetch(plan)
+          def self.rate_for(plan)
+            RATES.fetch(plan)
+          end
         end
       RUBY
 
@@ -120,7 +124,9 @@ RSpec.describe "the agent workflow", :integration do
 
         module Pricing
           RATES = { monthly: 10 }.freeze
-          def self.rate_for(plan) = RATES.fetch(plan)
+          def self.rate_for(plan)
+            RATES.fetch(plan)
+          end
         end
       RUBY
 
@@ -244,10 +250,21 @@ RSpec.describe "the agent workflow", :integration do
       project.install_spec_helper
       project.write("lib/presenter.rb", <<~RUBY)
         class Presenter
-          def initialize(record) = @record = record
-          def render = { money: money, date: date }
-          def money = format("%.2f", @record.amount)
-          def date = @record.at.year
+          def initialize(record)
+            @record = record
+          end
+
+          def render
+            { money: money, date: date }
+          end
+
+          def money
+            format("%.2f", @record.amount)
+          end
+
+          def date
+            @record.at.year
+          end
         end
       RUBY
       project.write("spec/presenter_spec.rb", <<~RUBY)
@@ -270,18 +287,18 @@ RSpec.describe "the agent workflow", :integration do
     it "reports the line both stacks run through" do
       project.run_signal
 
-      expect(project.summary_text).to include("## Shared code paths", "lib/presenter.rb:3")
+      expect(project.summary_text).to include("## Shared code paths", "lib/presenter.rb:7")
     end
 
     it "names it on stdout, so an agent need not open the report to know where to look" do
       run = project.run_signal
 
-      expect(run.stdout).to include("Shared code paths: lib/presenter.rb:3 (2 signatures)")
+      expect(run.stdout).to include("Shared code paths: lib/presenter.rb:7 (2 signatures)")
     end
 
     it "publishes it as structured data" do
       project.run_signal
-      shared = project.json.fetch("code_paths").find { |path| path.fetch("location") == "lib/presenter.rb:3" }
+      shared = project.json.fetch("code_paths").find { |path| path.fetch("location") == "lib/presenter.rb:7" }
 
       expect(shared).to include("signature_count" => 2, "examples" => 2)
     end

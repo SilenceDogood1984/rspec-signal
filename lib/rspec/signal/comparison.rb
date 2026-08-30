@@ -84,14 +84,16 @@ module RSpec
 
       def pair(before, after, attribute)
         available = before.group_by { |entry| entry.public_send(attribute) }
-        matched_before = {}
+        matched_before = {}.compare_by_identity
+
         matched_after, unmatched_after = after.partition do |entry|
           match = available[entry.public_send(attribute)]&.shift
-          matched_before[match.object_id] = true if match
+          matched_before[match] = true if match
           match
         end
 
-        unmatched_before = before.reject { |entry| matched_before.key?(entry.object_id) }
+        unmatched_before = before.reject { |entry| matched_before.key?(entry) }
+
         [matched_after, unmatched_before, unmatched_after]
       end
     end

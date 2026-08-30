@@ -38,6 +38,11 @@ module RSpec
         representative.message
       end
 
+      # Arguments that rerun exactly this group's examples, in run order.
+      def rerun_arguments
+        @rerun_arguments ||= @failures.map(&:rerun_argument).uniq
+      end
+
       # Locations of every example in the group, in run order, deduplicated.
       def affected_locations
         @affected_locations ||= @failures.map(&:spec_location).uniq
@@ -52,16 +57,28 @@ module RSpec
         @failures.sum { |failure| failure.reduced.omitted_count }
       end
 
-      def to_h
+      def to_h(max_message_lines: 30, max_diff_lines: 20)
         {
           signature: fingerprint.digest,
+          loose_signature: fingerprint.loose_digest,
           count: size,
           exception: exception_class,
+          summary: message.summary,
           culprit: fingerprint.culprit,
           app_context: fingerprint.app_context,
-          representative: representative.to_h,
-          affected: @failures.map { |failure| { location: failure.spec_location, description: failure.description } }
+          rerun: Rerun.command([representative.rerun_argument]),
+          rerun_ids: rerun_arguments,
+          representative: representative.to_h(max_message_lines: max_message_lines,
+                                              max_diff_lines: max_diff_lines),
+          affected: @failures.map { |failure| affected_h(failure) }
         }.compact
+      end
+
+      private
+
+      def affected_h(failure)
+        { location: failure.spec_location, id: failure.example_id,
+          description: failure.description }.compact
       end
     end
   end

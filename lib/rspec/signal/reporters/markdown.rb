@@ -24,9 +24,10 @@ module RSpec
 
         def render
           sections = [header]
-          sections << outside_examples_notice
+          sections.concat(OutsideExamples.new(@report, @config).render)
           # Themes before the inventory: what an agent needs first is the
           # possibility that thirty-five signatures are five problems.
+          sections << code_paths_section
           sections << related_section
           sections << index if @report.group_count > 1
           sections.concat(rendered_groups)
@@ -39,6 +40,7 @@ module RSpec
         def header
           lines = ["# RSpec Signal", "", headline]
           lines << reduction_line if @report.total_frames.positive?
+          lines << comparison_line if comparison_line
           lines << "" << meta_line
           lines << "" << conventions
           lines.join("\n")
@@ -68,6 +70,15 @@ module RSpec
             "(#{number(@report.omitted_frames)} framework/library #{plural(@report.omitted_frames, "frame")} omitted)."
         end
 
+        # What changed since the previous run. The most useful line in the
+        # report when there was a previous run, and absent when there was not.
+        def comparison_line
+          return @comparison_line if defined?(@comparison_line)
+
+          headline = @report.comparison&.headline
+          @comparison_line = headline && "Since the last run: #{headline}."
+        end
+
         def meta_line
           bits = []
           bits << "seed `#{@report.seed}`" if @report.seed_used?
@@ -85,7 +96,7 @@ module RSpec
         def index
           rows = groups.each_with_index.map do |group, position|
             "| #{position + 1} | #{group.size} | `#{group.exception_class}` | " \
-              "#{escape(group.fingerprint.culprit)} | #{escape(one_line(group.message.headline(90)))} |"
+              "#{escape(group.fingerprint.culprit)} | #{escape(one_line(group.message.summary(90)))} |"
           end
           ["## Signatures", "",
            "| # | Examples | Exception | Raised in | Message |",
@@ -97,24 +108,14 @@ module RSpec
           RelatedFailures.new(@report.clusters, signature_positions, @config).render
         end
 
+        def code_paths_section
+          SharedCodePaths.new(@report.code_paths, signature_positions, @config).render
+        end
+
         # Cluster members point back at the numbered sections below, so the
         # reader can go straight from a symptom to the failures carrying it.
         def signature_positions
           @signature_positions ||= @report.groups.each_with_index.to_h { |group, i| [group.fingerprint.digest, i + 1] }
-        end
-
-        # A `before(:suite)` blow-up produces no failed examples at all. RSpec
-        # only reports those through its message stream, which a formatter
-        # cannot capture without swallowing every other message, so say plainly
-        # what happened and where to look.
-        def outside_examples_notice
-          return nil unless @report.errors_outside_examples.positive?
-
-          count = @report.errors_outside_examples
-          ["## Errors outside examples", "",
-           "#{number(count)} #{plural(count, "error")} occurred outside of any example " \
-           "(a `before(:suite)` hook, a spec file that failed to load, or similar). " \
-           "rspec-signal cannot capture their detail; the full text is in RSpec's own output."].join("\n")
         end
 
         def rendered_groups
@@ -151,12 +152,14 @@ module RSpec
 
         # The representative on its own, plus the whole signature when that is a
         # different command and short enough to be worth typing.
+        #
+        # Example ids, not locations: a location selects every example defined
+        # on that line, which for a loop-generated `it` is all of them and for
+        # two failures sharing a line is both of them. See {Rerun}.
         def rerun_commands(group)
-          commands = ["bundle exec rspec #{group.representative.rerun}"]
-          arguments = group.failures.map(&:rerun).uniq
-          if arguments.size > 1 && arguments.size <= MAX_RERUN_ARGUMENTS
-            commands << "bundle exec rspec #{arguments.join(" ")}"
-          end
+          commands = [Rerun.command([group.representative.rerun_argument])]
+          arguments = group.rerun_arguments
+          commands << Rerun.command(arguments) if arguments.size > 1 && arguments.size <= MAX_RERUN_ARGUMENTS
           commands
         end
 

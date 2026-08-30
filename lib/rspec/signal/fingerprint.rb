@@ -31,7 +31,7 @@ module RSpec
         significant = frames.reject(&:framework?)
         culprit = significant.first
         app_context = significant.find do |frame|
-          frame.project? && spec_patterns.none? { |pattern| pattern.match?(frame.display_path) }
+          frame.project? && !spec_frame?(frame, spec_patterns)
         end
 
         new(
@@ -40,6 +40,21 @@ module RSpec
           culprit: culprit&.location || fallback_location,
           app_context: app_context&.location
         )
+      end
+
+      # Whether a frame belongs to the spec suite rather than the application.
+      # Shared by fingerprinting and by the code-path analysis, which both need
+      # to look past the example that happened to trip over the bug.
+      def self.spec_frame?(frame, spec_patterns = DEFAULT_SPEC_PATTERNS)
+        spec_patterns.any? { |pattern| pattern.match?(frame.display_path) }
+      end
+
+      # A line-number-independent identity: the exception and its normalized
+      # message, without the frames. Two runs of the same broken code report
+      # the same digest even after an edit shifts the raise site, which is what
+      # lets a run comparison tell "moved" apart from "fixed, and a new one".
+      def loose_digest
+        @loose_digest ||= Digest::SHA256.hexdigest([exception_class, message].join("\0"))[0, 12]
       end
 
       # Joined on NUL so that shifting text from one component into the next

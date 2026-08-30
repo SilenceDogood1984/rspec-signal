@@ -120,4 +120,51 @@ RSpec.describe RSpec::Signal::Message do
     expect(build_message([])).to be_empty
     expect(build_message(["a"])).not_to be_empty
   end
+
+  describe "#summary" do
+    # RSpec opens every failure by echoing the source expression, which the
+    # reader can already see and which is identical for every example sharing
+    # a line. The line worth showing is the one after it.
+    it "skips the Failure/Error source echo and the bare exception label" do
+      message = build_message([
+                                "Failure/Error: def render; @rows.map { |r| r.fetch(:title) }.join(\", \"); end",
+                                "",
+                                "KeyError:",
+                                "  key not found: :title"
+                              ])
+
+      expect(message.summary).to eq("key not found: :title")
+    end
+
+    it "finds the diagnosis when a matcher appends it to the echo without a blank line" do
+      message = build_message([
+                                "Failure/Error: expect(response).to have_http_status(:ok)",
+                                "  expected the response to have status code 200 but it was 404"
+                              ])
+
+      expect(message.summary).to eq("expected the response to have status code 200 but it was 404")
+    end
+
+    it "prefers the expectation over the source for a matcher failure" do
+      message = build_message(["Failure/Error: expect(a).to eq(b)", "", "  expected: 1", "       got: 2"])
+
+      expect(message.summary).to eq("expected: 1")
+    end
+
+    it "falls back to the echo when there is nothing else" do
+      message = build_message(["Failure/Error: expect(a).to be_truthy"])
+
+      expect(message.summary).to eq("Failure/Error: expect(a).to be_truthy")
+    end
+
+    it "is empty for an empty message" do
+      expect(build_message([]).summary).to eq("")
+    end
+
+    it "truncates to the requested width" do
+      message = build_message(["Failure/Error: x", "", "y" * 200])
+
+      expect(message.summary(40).length).to eq(40)
+    end
+  end
 end

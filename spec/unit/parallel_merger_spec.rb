@@ -26,6 +26,28 @@ RSpec.describe RSpec::Signal::ParallelMerger do
     expect(result.report.groups.first.affected_locations).to contain_exactly("spec/a_spec.rb:2", "spec/b_spec.rb:2")
   end
 
+  # A round trip through the worker payload must not quietly drop anything the
+  # report renders. Shared example groups are one of the main reasons the same
+  # failure turns up in many files, which makes them exactly the context a
+  # parallel run needs most.
+  it "preserves every locator the report renders" do
+    config = RSpec::Signal.configuration
+    config.output_dir = output
+    config.reset_memoized!
+    original = build_failure(backtrace: Backtraces.active_record_invalid, message: ["broken"],
+                             example_id: "./spec/a_spec.rb[1:2]",
+                             shared_group_locations: ["\"a shared group\" at spec/support/shared.rb:4"])
+    write_worker("1", examples: 1, failures: [JSON.parse(JSON.generate(
+                                                           original.to_h.merge(fingerprint: original.fingerprint.to_h)
+                                                         ))])
+
+    merged = described_class.new(registry: registry, config: config).call.report.failures.first
+
+    expect(merged.shared_group_locations).to eq(["\"a shared group\" at spec/support/shared.rb:4"])
+    expect(merged.example_id).to eq("./spec/a_spec.rb[1:2]")
+    expect(merged.rerun_argument).to eq("./spec/a_spec.rb[1:2]")
+  end
+
   it "does not read unregistered stale worker files" do
     write_worker("1", examples: 1, failures: [])
     File.write(File.join(registry, "stale.json"), JSON.generate(summary: { examples: 99 }))

@@ -9,9 +9,14 @@ module RSpec
     class ParallelMerger
       Result = Struct.new(:report, :workers, :missing, :write_result, keyword_init: true)
 
-      def initialize(registry:, config: RSpec::Signal.configuration)
+      def initialize(registry:, config: RSpec::Signal.configuration, run_id: nil)
         @registry = registry
         @config = config
+        @run_id = run_id
+      end
+
+      def run_id
+        @run_id ||= ENV.fetch(ParallelRun::RUN_ID, nil)
       end
 
       def call
@@ -25,7 +30,7 @@ module RSpec
           report: report,
           workers: payloads.size,
           missing: missing,
-          write_result: Writer.new(@config).write(report)
+          write_result: Writer.new(@config).write(compared(report))
         )
         # Only once we have successfully produced a report: a worker JSON that
         # failed to parse should stay on disk for a human to look at, not be
@@ -35,6 +40,19 @@ module RSpec
       end
 
       private
+
+      # The merged report is the only one that has seen the whole run, so it is
+      # the one that gets compared against, and recorded for the next run.
+      def compared(report)
+        return report unless @config.track_history
+
+        history = History.new(@config)
+        report.comparison = history.compare(report, run_id: report.run_id)
+        history.record(report, run_id: report.run_id)
+        report
+      rescue StandardError
+        report
+      end
 
       # Worker payloads are per-run (`workers/<run-id>/<worker-id>/signal.json`),
       # so once merged into the top-level report they would otherwise sit in
@@ -57,8 +75,14 @@ module RSpec
           pending_count: sum(summaries, "pending"),
           duration: summaries.filter_map { |item| item["duration_seconds"] }.max,
           environment: payloads.first&.fetch("environment", {}) || {},
-          errors_outside_examples: sum(summaries, "errors_outside_examples"), relate_failures: @config.relate_failures
+          errors_outside_examples: sum(summaries, "errors_outside_examples"),
+          relate_failures: @config.relate_failures, code_path_depth: @config.code_path_depth,
+          outside_example_failures: load_outside(payloads), run_id: run_id
         )
+      end
+
+      def load_outside(payloads)
+        payloads.flat_map { |payload| payload.fetch("outside_examples", []).map { |item| load_failure(item) } }
       end
 
       def load_failures(payloads)
@@ -80,7 +104,8 @@ module RSpec
         { description: data.fetch("description"), spec_location: data.fetch("location"),
           rerun: data["rerun"], example_id: data["id"], exception_class: data.fetch("exception"),
           message: load_message(data.fetch("message", [])), reduced: reduced, frames: frames,
-          diagnostics: data.fetch("diagnostics", {}), raw: data["raw"] }
+          diagnostics: data.fetch("diagnostics", {}), raw: data["raw"],
+          shared_group_locations: data.fetch("shared_groups", []) }
       end
 
       def load_fingerprint(data)

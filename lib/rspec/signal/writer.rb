@@ -26,7 +26,7 @@ module RSpec
       end
 
       def write(report)
-        return clean if report.failures.empty? && report.errors_outside_examples.zero?
+        return clean unless report.reportable?
 
         FileUtils.mkdir_p(dir)
         write_gitignore

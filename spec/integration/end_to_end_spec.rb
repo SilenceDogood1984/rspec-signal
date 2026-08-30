@@ -135,10 +135,9 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.summary).not_to match(/rspec-core|rspec-expectations|bundler/)
     end
 
-    it "gives a rerun command that works" do
+    it "gives a rerun command that reruns exactly the example it names" do
       run
-      rerun = run.summary[/bundle exec rspec (\S+)/, 1]
-      second = project.run(rerun)
+      second = project.run(*project.first_rerun_arguments)
 
       expect(second.stdout).to include("1 example, 1 failure")
     end

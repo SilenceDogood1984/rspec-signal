@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Shared code paths.** A third analysis layer that reads the *stack* rather than
+  the message, and reports the first-party lines that more than one signature runs
+  through. This relates failures whose messages have nothing in common — a `KeyError`
+  and the `expect { }.not_to raise_error` that swallowed it — which no message-based
+  extractor can do. Two rules hold it back: only the innermost first-party frames
+  outside the spec suite are indexed (`config.code_path_depth`, default 5), and a
+  line is reported only when two or more distinct signatures cross it. It claims a
+  measured fact, never a cause. Configure with `config.max_code_paths`.
+- **Run-to-run comparison.** `tmp/rspec-signal/history.json` records the last ten
+  runs as signature digests and counts — no messages, no paths. Each run then reports
+  what changed: `28 resolved, 3 new, 14 still failing, 3 changed signature`. The
+  fourth bucket is what makes the rest trustworthy: an edit that only shifts line
+  numbers reads as *changed*, never as a fix. The history survives the green run that
+  deletes every other artifact. Turn it off with `config.track_history = false`.
+- **Errors outside examples are captured, not just counted.** A spec file that fails
+  to load, or a `before(:suite)` hook that blows up, now reaches the report with its
+  exception, message, reduced trace and a rerun command. Previously only a count was
+  possible. The formatter registers RSpec's `:message` notification and re-emits
+  anything no other formatter is listening for, so nothing is lost or duplicated.
+- Stdout in quiet mode is now a triage view: counts, what changed since the last run,
+  and the top shared code paths. Enough to decide whether to open the report.
+- `signal.json` gains `run_id`, `since_last_run`, `code_paths`, `outside_examples`,
+  and per-signature `summary`, `rerun`, `rerun_ids` and `loose_signature`. The
+  contract is documented in the README.
+
+### Changed
+
+- **Rerun commands now name RSpec example ids rather than locations**, shell-quoted.
+  A location selects every example defined on that line, so the printed command could
+  rerun ten examples for a loop-generated `it`, and the *same* command could be
+  printed for two different signatures. Reruns are now exact. The human-readable
+  location remains on the `Example` line above.
+- The signature index shows the exception message rather than RSpec's
+  `Failure/Error:` source echo, which was identical on every row.
+- `signal.json` is `schema: 2`. Every schema 1 field keeps its name and meaning.
+
+### Fixed
+
+- `signal.json` ignored `max_message_lines` and `max_diff_lines`, so configuring
+  them changed `signal.md` and left the JSON at the built-in defaults.
+- The parallel merger dropped `shared_group_locations`, so the "Via shared example
+  group" locator was missing from every parallel report.
+- A run whose only problem was outside every example wrote no report.
+- The terminal summary printed "0 failures" beside a report link when a spec file
+  failed to load.
+- `--dry-run` deleted the report written by the previous real run.
+
 ## [0.2.0] - 2026-08-27
 
 ### Added

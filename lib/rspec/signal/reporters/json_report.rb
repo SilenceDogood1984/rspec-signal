@@ -7,12 +7,13 @@ module RSpec
     module Reporters
       # Machine-readable twin of the Markdown report, for tooling and CI.
       class JsonReport
-        def initialize(report, _config = nil)
+        def initialize(report, config = nil)
           @report = report
+          @config = config
         end
 
         def render
-          "#{JSON.pretty_generate(@report.to_h)}\n"
+          "#{JSON.pretty_generate(@report.to_h(@config))}\n"
         end
       end
     end

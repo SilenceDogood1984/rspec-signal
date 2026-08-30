@@ -4,6 +4,7 @@ require "tmpdir"
 require "fileutils"
 require "open3"
 require "json"
+require "shellwords"
 
 # A throwaway project on disk that we run a real `rspec` process against.
 #
@@ -79,8 +80,27 @@ class SandboxProject
     File.read(artifact(name))
   end
 
+  def summary_text
+    read("signal.md")
+  end
+
   def json
     JSON.parse(read("signal.json"))
+  end
+
+  # Every `bundle exec rspec ...` command the report prints, split the way a
+  # shell would split it. Reports quote example ids, so a naive whitespace
+  # split would pass the quotes through as part of the argument.
+  def rerun_commands(name = "signal.md")
+    read(name).scan(/^bundle exec rspec (.+)$/).flatten
+  end
+
+  def rerun_arguments(index = 0, name: "signal.md")
+    Shellwords.split(rerun_commands(name).fetch(index))
+  end
+
+  def first_rerun_arguments
+    rerun_arguments(0)
   end
 
   def recorded_examples

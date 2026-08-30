@@ -60,6 +60,17 @@ module RSpec
         "#{@lines.join("\n")}\n\n#{@cause_lines.join("\n")}"
       end
 
+      # The one line that says what went wrong, for the signature index.
+      #
+      # RSpec opens every failure with `Failure/Error:` echoing the source
+      # expression, which the reader can already see and which is identical
+      # across every example that shares a line. The line worth showing is the
+      # one after it: `key not found: :title`, not `def render; @rows.map ...`.
+      def summary(limit = 160)
+        line = diagnostic_line
+        line.empty? ? headline(limit) : truncate(line, limit)
+      end
+
       # First meaningful line, for headings and one-line summaries.
       def headline(limit = 160)
         line = @lines.find { |l| !l.strip.empty? }.to_s.strip
@@ -93,6 +104,29 @@ module RSpec
       end
 
       private
+
+      # RSpec separates the source echo from the diagnosis with a blank line
+      # when it can. When it cannot -- a matcher that appends its message
+      # straight onto the echo -- fall back to dropping just the echo line.
+      def diagnostic_line
+        blocks = @lines.chunk { |line| line.strip.empty? }.reject(&:first).map(&:last)
+        return "" if blocks.empty?
+
+        candidate = source_echo?(blocks.first.first) && blocks.size > 1 ? blocks[1] : blocks.first
+        candidate = candidate.drop(1) if source_echo?(candidate.first)
+        candidate = candidate.drop(1) if candidate.size > 1 && class_label?(candidate.first)
+        candidate.first.to_s.strip
+      end
+
+      def source_echo?(line)
+        line.to_s.strip.start_with?("Failure/Error")
+      end
+
+      # A bare `KeyError:` / `ActiveRecord::RecordInvalid:` label line, which
+      # duplicates the exception column beside it.
+      def class_label?(line)
+        /\A[A-Z]\w*(?:::\w+)*:\z/.match?(line.to_s.strip)
+      end
 
       def truncated_lines(max_lines:, max_diff_lines:)
         kept = []

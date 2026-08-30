@@ -11,11 +11,51 @@ thousands of tokens on `rspec-core/hooks.rb`, Bundler, and Thor before the agent
 reaches a single line of your code — and you pay that cost repeatedly,
 even when many failures stem from one bug.
 
-`rspec-signal` is a deterministic context-reduction layer between RSpec and a coding
-agent. It writes `tmp/rspec-signal/signal.md`: a compact, model-neutral report you
-can paste into any assistant or point an agent at.
+`rspec-signal` is a deterministic failure-intelligence layer between RSpec and a
+coding agent. It answers one question -- *what actually failed, and what is it
+really?* -- in a bounded number of tokens, with an exact command to verify each fix.
 
-In normal mode your terminal output stays as it was. In opt-in agent mode it also becomes a quiet formatter that prevents verbose failures from entering an autonomous agent's context.
+In normal mode your terminal output stays as it was. In opt-in agent mode it also
+becomes a quiet formatter that prevents verbose failures from entering an autonomous
+agent's context.
+
+No model, no network, no API key. Two runs of the same suite produce byte-identical
+reports.
+
+## Quickstart
+
+```ruby
+# Gemfile
+group :test do
+  gem "rspec-signal"
+end
+```
+
+```ruby
+# spec/spec_helper.rb (or rails_helper.rb)
+require "rspec/signal"
+```
+
+```bash
+bundle exec rspec-signal
+```
+
+That is the whole setup. Your terminal output is unchanged by the require; the
+`rspec-signal` command is the quiet wrapper for agents. Either way you get
+`tmp/rspec-signal/signal.md`.
+
+## Vocabulary
+
+Six words the report uses, defined once.
+
+| Term | Meaning |
+|------|---------|
+| **signature** | A set of failures that *are* the same failure, by an exact four-part fingerprint. Authoritative |
+| **related cluster** | Failures across more than one signature that share one strong diagnostic *symptom*. A hint, never a diagnosis |
+| **symptom** | The one characteristic a cluster is keyed on: an HTTP status, a missing selector, a route, a model, a constant |
+| **shared code path** | A line of *your* code that more than one signature runs through. A measured fact about stacks, not messages |
+| **culprit** | The innermost frame that is not test-runner plumbing: the code that actually raised |
+| **app context** | The innermost first-party frame outside your spec suite: the file to open first |
 
 ---
 
@@ -84,7 +124,7 @@ spec/models/shelf_spec.rb:5 in `block (3 levels) in <top (required)>'
 **Rerun**
 
 ```bash
-bundle exec rspec spec/models/shelf_spec.rb:4
+bundle exec rspec './spec/models/shelf_spec.rb[1:1]'
 ```
 
 **Also failing identically (11)**
@@ -104,21 +144,9 @@ failures reduces far less, and that is correct behaviour.
 
 ## Installation
 
-```ruby
-# Gemfile
-group :test do
-  gem "rspec-signal"
-end
-```
-
-Then require it from `spec_helper.rb` (or `rails_helper.rb`):
-
-```ruby
-require "rspec/signal"
-```
-
-That is the whole setup. Requiring the gem registers the formatter and puts RSpec's
-default formatter back, so your terminal output is unchanged.
+See [Quickstart](#quickstart) for the two lines. Requiring the gem registers the
+formatter and puts RSpec's default formatter back, so your terminal output is
+unchanged.
 
 If you would rather be explicit, or you need it only in CI, skip the require and
 name the formatter instead:
@@ -144,16 +172,30 @@ suite remains non-zero; a passing suite remains zero. The
 low-level `bundle exec rspec --format RSpec::Signal::Formatter` interface remains
 available after requiring `rspec/signal` from the spec helper.
 
+Stdout is a tool call's return value, so stdout is the triage view — enough to decide
+whether to open the report at all:
+
+```text
+2085 examples, 42 failures, 6 pending
+
+rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters (2767 backtrace frames omitted)
+Since last run: 28 resolved, 3 new, 14 still failing (42 -> 17 failures)
+Shared code paths: app/models/reader.rb:88 (9 signatures), app/api/serializer.rb:31 (4 signatures)
+Report: tmp/rspec-signal/signal.md
+```
+
 ```text
 RSpec runs the full suite
 ↓
 verbose failure bodies and framework backtraces are not printed
 ↓
-rspec-signal writes tmp/rspec-signal/signal.md
+rspec-signal writes tmp/rspec-signal/signal.md and prints five lines of triage
 ↓
-the agent reads signal.md
+the agent reads signal.md only if the triage is not enough
 ↓
-the agent reruns individual failures from the report as needed
+the agent reruns one signature by its exact example ids
+↓
+the next run reports what that fix resolved, and what it did not
 ```
 
 ### Parallel suites (`parallel_tests`)
@@ -218,6 +260,9 @@ rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters (2767 ba
 Report: tmp/rspec-signal/signal.md
 ```
 
+The parent merger owns the run comparison, because it is the only process that has
+seen the whole run.
+
 ### Human and CI modes
 
 For a human, run RSpec normally:
@@ -244,16 +289,21 @@ claude "fix the failures in tmp/rspec-signal/signal.md"
 
 ```text
 tmp/rspec-signal/
-  signal.md    primary compact report -- hand this to the agent
-  signal.json  the same data, machine readable, for CI and tooling
-               (`signatures` and `related` mirror the two grouping layers)
-  full.txt     optional original output; off by default
-  .gitignore   written automatically; artifacts can contain application data
+  signal.md     primary compact report -- hand this to the agent
+  signal.json   the same data, machine readable, for CI and tooling
+  history.json  digests and counts of recent runs, so a run can say what changed
+  full.txt      optional original output; off by default
+  .gitignore    written automatically; artifacts can contain application data
 ```
 
-A run with **no** failures deletes these files. A stale report describing failures
-you already fixed is worse than no report at all, because an agent will go and
-"fix" them again.
+A run with **no** failures deletes the report files. A stale report describing
+failures you already fixed is worse than no report at all, because an agent will go
+and "fix" them again.
+
+`history.json` deliberately survives that cleanup — "42 failures became 0" is the
+most valuable thing a run can say, and the run that deletes the report is exactly the
+run that should be able to say it. See
+[Knowing what changed](#knowing-what-changed).
 
 The large `full.txt` artifact is off by default. Enable it only when you need the
 original unreduced formatter rendering:
@@ -267,6 +317,99 @@ end
 Individual per-failure files are deliberately **not** written. With failures
 collapsed into a handful of signatures, `signal.md` is already the unit you want
 to paste, and a directory of near-duplicate fragments is just more to sift through.
+
+### `signal.json`
+
+`schema: 2`. Stable, and safe to build tooling on:
+
+| Key | What it is |
+|-----|-----------|
+| `run_id` | Identifies this run |
+| `summary` | Counts: examples, failures, pending, signatures, related clusters, shared code paths |
+| `since_last_run` | `resolved` / `new` / `persistent` / `changed`, each a list of signatures. Absent on a first run |
+| `signatures[]` | One per exact signature, largest first |
+| `signatures[].signature` | The digest. **This is the stable identity of a failure** — key on it |
+| `signatures[].summary` | The one line that says what went wrong |
+| `signatures[].rerun` | A copy-pasteable command that reruns the representative and nothing else |
+| `signatures[].rerun_ids` | Every affected example's RSpec id |
+| `signatures[].culprit` / `.app_context` | Where it raised, and the first-party line to open |
+| `signatures[].representative` | The one failure rendered in full: message, reduced trace, diagnostics |
+| `signatures[].affected[]` | Every example in the signature: location, id, description |
+| `related[]` | Symptom clusters |
+| `code_paths[]` | Lines of your code crossed by more than one signature |
+| `outside_examples[]` | Failures RSpec reported without an example |
+
+Only the representative carries a full trace. That is the size trade-off the whole
+gem is built on: the other members of a signature are, by definition, the same
+failure.
+
+## Rerunning exactly what failed
+
+Every `Rerun` block names **RSpec example ids**, not locations:
+
+```bash
+bundle exec rspec './spec/models/shelf_spec.rb[1:1]'
+```
+
+A location (`spec/models/shelf_spec.rb:4`) is what a human types, but it selects
+every example defined on that line — which for a loop-generated `it` is all of them,
+and for two failures that share a line is both of them. An agent that fixes a
+signature, reruns the printed command and still sees failures cannot then tell
+whether its fix failed or whether it caught something unrelated.
+
+The ids are shell-quoted because `[` and `]` are glob metacharacters: bash passes an
+unmatched glob through unchanged, but zsh fails the command outright. The
+human-readable location is still on the `Example` line directly above.
+
+RSpec's own `--only-failures` keys on the same ids. The two go together:
+
+```bash
+# spec/spec_helper.rb
+RSpec.configure { |c| c.example_status_persistence_file_path = "spec/examples.txt" }
+```
+
+```bash
+bundle exec rspec-signal --only-failures   # just what broke last time
+bundle exec rspec-signal --next-failure    # one at a time, in defined order
+```
+
+## Knowing what changed
+
+An agent has no memory between turns. The tool has a filesystem, so it keeps one:
+
+```text
+2085 examples, 42 failures, 6 pending
+
+rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters
+Since last run: 28 resolved, 3 new, 14 still failing (42 -> 17 failures)
+Shared code paths: app/models/reader.rb:88 (9 signatures)
+Report: tmp/rspec-signal/signal.md
+```
+
+Four buckets, from two keys per signature — the full fingerprint, and a **loose** key
+of exception and normalized message alone, independent of line numbers:
+
+| Bucket | Rule |
+|--------|------|
+| **still failing** | The digest is in both runs |
+| **resolved** | The digest is gone, and its loose key is gone too |
+| **new** | The digest appeared, and its loose key is new too |
+| **changed signature** | The digest changed but the loose key survived — same failure, moved or reworded |
+
+The fourth bucket is what makes the other three trustworthy. Editing the file that
+raises shifts every culprit line; without it, one such edit turns every persistent
+failure into a spurious resolved/new pair, and being told "28 resolved" when you
+resolved nothing is worse than being told nothing.
+
+`history.json` holds the last ten runs as **digests and counts only** — no messages,
+no paths, nothing the redactor exists to protect. A missing, unreadable or corrupt
+history means the run has nothing to compare against, which is exactly how every run
+behaved before this existed. CI that discards `tmp/` simply gets no comparison, and
+needs no configuration to say so.
+
+```ruby
+RSpec::Signal.configure { |config| config.track_history = false }
+```
 
 ## Filtering philosophy
 
@@ -430,6 +573,56 @@ hold the line:
 Ordering is deterministic: largest cluster first, then most signatures spanned, then
 run order.
 
+## Shared code paths
+
+Both layers above read the failure **message**. Neither can relate two failures whose
+messages have nothing in common — and the most valuable question is not "which
+failures look alike" but **"which line of my code is behind the most failures"**.
+
+So a third layer reads the **stack**:
+
+```markdown
+## Shared code paths
+
+First-party lines that more than one signature runs through, most signatures first.
+A measured fact, not a diagnosis: these examples all execute this line. The
+signatures below remain authoritative.
+
+- `app/serializers/order.rb:5` in `call` -- 2 signatures, 12 examples (#1, #4)
+- `app/models/reader.rb:88` in `progress` -- 9 signatures, 21 examples (#2, #3, #5, ...)
+```
+
+A worked case. One missing hash key in a pricing module, reached through three call
+paths from three spec files, produces two signatures:
+
+```text
+KeyError: key not found: :annual
+RSpec::Expectations::ExpectationNotMetError: expected no Exception, got #<KeyError...>
+```
+
+No symptom extractor can relate those — correctly, because their messages really do
+have almost nothing in common. Both stacks run through `app/pricing.rb:4`, and that
+fact was in the backtrace all along.
+
+### What stops it over-reporting
+
+The same two rules as the cluster layer, for the same reasons:
+
+1. **Only first-party frames outside the spec suite, and only the innermost few.**
+   The outer end of a stack is shared plumbing — every request spec passes through
+   `application_controller.rb` — while the inner end is the bug. Depth is
+   `config.code_path_depth`, default 5.
+2. **Two or more distinct signatures, or it is not reported.** One signature crossing
+   a line is already reported as that signature's `app_context`; saying it twice is
+   noise.
+
+And one rule of its own: **it claims nothing about causation.** The section states a
+measured fact — these signatures execute this line — and says so in those words. When
+no line is shared, the section does not appear.
+
+Ordering is deterministic: most signatures spanned, then most examples, then run
+order.
+
 ## Large HTML responses
 
 A request spec expecting one sentence and receiving a Rails exception page produces
@@ -498,10 +691,15 @@ RSpec::Signal.configure do |config|
   config.max_clusters      = 10  # clusters rendered in full (nil = all)
   config.max_cluster_specs = 6   # spec files listed per cluster
 
+  # Shared code paths (see "Shared code paths").
+  config.code_path_depth = 5   # first-party frames indexed, from the raise site in
+  config.max_code_paths  = 5   # paths rendered in full (nil = all)
+
   # Artifacts.
   config.write_json      = true
   config.write_full      = true
   config.write_gitignore = true
+  config.track_history   = true  # history.json, for "since last run"
 
   # Behaviour.
   config.enabled          = true
@@ -597,11 +795,14 @@ everything with `config.redaction_filter`, or turn scrubbing off with
 
 ## Limitations
 
-- **Errors outside examples.** A `before(:suite)` blow-up, or a spec file that fails
-  to load, produces no failed examples. RSpec reports those only through its message
-  stream, which a formatter cannot subscribe to without swallowing every other
-  message. `rspec-signal` reports the count and says where to look, but cannot
-  capture the text.
+- **Errors outside examples are recovered, but from rendered text.** A spec file that
+  fails to load, or a `before(:suite)` blow-up, produces no failed example; RSpec
+  reports it on its message stream instead. `rspec-signal` captures those, parses
+  RSpec's own rendering back apart, and reports them under **Errors outside
+  examples** with the exception, the message, the file and a rerun command — but it
+  is reading formatted text rather than an exception object, so an unusual RSpec
+  rendering could reduce it to a count. Whatever it cannot parse it still re-emits
+  verbatim.
 - **Parallel test runners.** Use `rspec-signal-parallel` for suites launched with
   `parallel_tests` (see [Parallel suites](#parallel-suites-parallel_tests)); it isolates
   each worker and merges the results deterministically. Do not set a per-worker
@@ -626,6 +827,13 @@ everything with `config.redaction_filter`, or turn scrubbing off with
 - **No source packaging.** `rspec-signal` names files and lines; it does not embed
   source code. Agents working inside a repository can open the files themselves, and
   in v1 that is a better division of labour than guessing which snippets to inline.
+- **Shared code paths are a measurement, not a diagnosis.** "These signatures execute
+  this line" is exactly what is claimed and no more. A line every failure happens to
+  pass through — a shared serializer, a base controller — will be reported, and
+  judging whether it is the cause is the reader's job.
+- **Run comparison needs the previous run's `history.json`.** CI that starts from a
+  clean `tmp/` gets no comparison. That degrades to the behaviour of every run before
+  the feature existed; it does not degrade to a wrong answer.
 - **Reduction depends on your suite.** Failures that are already distinct and already
   shallow reduce very little. That is the correct outcome, not a failure of the gem.
 
@@ -661,7 +869,13 @@ grouping and rendering stages be tested directly against synthetic fixtures in
 real `rspec` processes in generated throwaway projects.
 
 Tests deliberately assert on output *size* as well as content, so a future change
-cannot quietly let noise back in.
+cannot quietly let noise back in. `spec/integration/agent_workflow_spec.rb` runs real
+`rspec` processes through the whole loop — run, fix, rerun exactly, verify what
+changed — because a rerun command that reruns the wrong examples cannot be caught
+from inside the process that printed it. `spec/performance` is a guard rather than a
+benchmark: it fails on an order-of-magnitude regression in per-failure cost, on the
+analysis ceasing to be roughly linear, or on the report ceasing to be bounded by the
+number of problems rather than the number of failures.
 
 ## Contributing
 

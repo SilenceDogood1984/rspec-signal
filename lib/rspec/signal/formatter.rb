@@ -2,6 +2,7 @@
 
 require "rspec/core"
 require "rspec/core/formatters"
+require "securerandom"
 
 module RSpec
   module Signal
@@ -13,19 +14,21 @@ module RSpec
     # formatter so requiring the gem does not change normal human output.
     class Formatter
       ::RSpec::Core::Formatters.register self, :start, :example_passed, :example_failed,
-                                         :example_pending, :dump_summary, :seed, :close
+                                         :example_pending, :message, :dump_summary, :seed, :close
 
-      PROGRESS_WIDTH = 20
+      MAX_TOP_CODE_PATHS = 2
 
       attr_reader :output
 
       def initialize(output)
         @output = output
         @failures = []
+        @outside = []
         @errors = []
         @summary = {}
         @seed = nil
         @seed_used = false
+        @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
       end
 
       def config
@@ -57,6 +60,19 @@ module RSpec
         advance_progress
       end
 
+      # RSpec reports a spec file that would not load, or a `before(:suite)`
+      # hook that blew up, on this stream rather than as a failed example.
+      # Registering for it is what lets those reach the report at all -- but it
+      # also suppresses RSpec's `FallbackMessageFormatter`, so anything we
+      # receive and nobody else prints has to be printed here.
+      def message(notification)
+        text = notification.message.to_s
+        capture_outside_example(text) if config.enabled?
+        echo_message(text)
+      rescue StandardError => e
+        record_error(e)
+      end
+
       def dump_summary(notification)
         @summary = {
           example_count: notification.example_count,
@@ -80,11 +96,14 @@ module RSpec
         return unless config.enabled?
 
         finish_progress
+        return if dry_run?
+
         if ParallelRun.worker?
           ParallelRun.write_worker(report, config)
         else
-          result = writer.write(report)
-          print_summary(result)
+          current = report
+          compare_and_record(current)
+          print_summary(writer.write(current), current)
         end
       rescue StandardError => e
         record_error(e)
@@ -103,42 +122,79 @@ module RSpec
           seed: @seed,
           seed_used: @seed_used,
           environment: RSpec::Signal.environment,
-          errors_outside_examples: @summary.fetch(:errors_outside_examples, 0),
-          relate_failures: config.relate_failures
+          errors_outside_examples: outside_example_count,
+          outside_example_failures: @outside,
+          relate_failures: config.relate_failures,
+          code_path_depth: config.code_path_depth,
+          run_id: @run_id
         )
       end
 
       private
 
+      # RSpec's own count is authoritative when it is at least as large as
+      # ours; ours fills in when a run aborts before `dump_summary`.
+      def outside_example_count
+        [@summary.fetch(:errors_outside_examples, 0), @outside.size].max
+      end
+
+      def capture_outside_example(text)
+        return unless OutsideExample.failure?(text)
+
+        failure = OutsideExample.build(text, config, position: @outside.size + 1)
+        @outside << failure if failure
+      end
+
+      # Only when no other formatter would print it. Registering `:message`
+      # takes RSpec's fallback formatter out of the picture, and silently
+      # swallowing a load error is far worse than any output we add.
+      def echo_message(text)
+        return unless echo_messages?
+
+        @output.puts(text)
+      end
+
+      def echo_messages?
+        return @echo_messages if defined?(@echo_messages)
+
+        listeners = ::RSpec.configuration.reporter.registered_listeners(:message)
+        @echo_messages = listeners.none? { |listener| !listener.equal?(self) }
+      rescue StandardError
+        @echo_messages = RSpec::Signal.quiet_mode?
+      end
+
+      # A dry run executes nothing, so it has neither failures to report nor
+      # the standing to delete the report of the run that did.
+      def dry_run?
+        ::RSpec.configuration.dry_run?
+      rescue StandardError
+        false
+      end
+
+      def compare_and_record(current)
+        return unless config.track_history
+
+        history = History.new(config)
+        current.comparison = history.compare(current, run_id: current.run_id)
+        history.record(current, run_id: current.run_id)
+      rescue StandardError => e
+        record_error(e)
+      end
+
       def start_progress(total)
         return unless config.enabled? && RSpec::Signal.quiet_mode?
-        return if ParallelRun.worker? || !@output.respond_to?(:tty?) || !@output.tty?
-        return unless total.to_i.positive?
+        return if ParallelRun.worker?
 
-        @progress_total = total.to_i
-        @progress_completed = 0
-        render_progress
+        @progress = ProgressBar.for(@output, total)
       end
 
       def advance_progress
-        return unless @progress_total
-
-        @progress_completed = [@progress_completed + 1, @progress_total].min
-        render_progress
-      end
-
-      def render_progress
-        percentage = (@progress_completed * 100) / @progress_total
-        filled = (@progress_completed * PROGRESS_WIDTH) / @progress_total
-        bar = ("█" * filled) + ("░" * (PROGRESS_WIDTH - filled))
-        @output.print "\rsignal [#{bar}] #{percentage}% #{@progress_completed}/#{@progress_total}"
+        @progress&.advance
       end
 
       def finish_progress
-        return unless @progress_total
-
-        @output.puts
-        @progress_total = nil
+        @progress&.finish
+        @progress = nil
       end
 
       def builder
@@ -149,27 +205,47 @@ module RSpec
         @writer ||= Writer.new(config)
       end
 
-      def print_summary(result)
+      # Stdout is a tool call's return value, so it should be the triage view:
+      # enough to decide whether to open the report, whether the last edit
+      # helped, and where to look first.
+      def print_summary(result, current)
         return unless config.terminal_summary
 
-        current = report
         if quiet_success?(result)
           @output.puts
           print_rspec_summary(current)
+          print_comparison(current)
           return
         end
-        return if @failures.empty? && result.summary_path.nil?
+        return unless current.reportable? || result.summary_path
 
         @output.puts
         print_rspec_summary(current) if RSpec::Signal.quiet_mode?
-        @output.puts "rspec-signal: #{current.failure_count} " \
-                     "#{current.failure_count == 1 ? "failure" : "failures"} in " \
-                     "#{current.group_count} distinct " \
-                     "#{current.group_count == 1 ? "signature" : "signatures"}" \
-                     "#{cluster_note(current)}#{omission_note(current)}"
+        @output.puts signal_line(current)
+        print_comparison(current)
+        print_code_paths(current)
         @output.puts "Report: #{writer.relative(result.summary_path)}" if result.summary_path
       rescue StandardError => e
         record_error(e)
+      end
+
+      def signal_line(current)
+        "rspec-signal: #{quantity(current.failure_count, "failure")} in " \
+          "#{quantity(current.group_count, "distinct signature")}" \
+          "#{cluster_note(current)}#{outside_note(current)}#{omission_note(current)}"
+      end
+
+      def print_comparison(current)
+        headline = current.comparison&.headline
+        @output.puts "Since last run: #{headline}" if headline
+      end
+
+      def print_code_paths(current)
+        top = current.code_paths.first(MAX_TOP_CODE_PATHS)
+        return if top.empty?
+
+        rendered = top.map { |path| "#{path.location} (#{quantity(path.signature_count, "signature")})" }
+        @output.puts "Shared code paths: #{rendered.join(", ")}"
       end
 
       def print_rspec_summary(current)
@@ -182,10 +258,22 @@ module RSpec
         RSpec::Signal.quiet_mode? && result.summary_path.nil?
       end
 
+      def quantity(count, word)
+        "#{count} #{count == 1 ? word : "#{word}s"}"
+      end
+
       def cluster_note(current)
         return "" unless current.cluster_count.positive?
 
-        ", #{current.cluster_count} related #{current.cluster_count == 1 ? "cluster" : "clusters"}"
+        ", #{quantity(current.cluster_count, "related cluster")}"
+      end
+
+      # "0 failures" beside a report link is a misleading pair when a spec file
+      # would not even load.
+      def outside_note(current)
+        return "" unless current.errors_outside_examples.positive?
+
+        ", #{quantity(current.errors_outside_examples, "error")} outside examples"
       end
 
       def omission_note(current)

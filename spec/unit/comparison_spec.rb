@@ -64,6 +64,32 @@ RSpec.describe RSpec::Signal::Comparison do
     end
   end
 
+  describe "when multiple signatures share a loose digest" do
+    it "pairs moved signatures without hiding an excess resolved signature" do
+      comparison = described_class.new(
+        previous: run(failures: 2, signatures: [signature("pricing:10", "shared"),
+                                                signature("billing:25", "shared")]),
+        current: run(failures: 1, signatures: [signature("billing:27", "shared")])
+      )
+
+      expect(comparison.changed.map(&:digest)).to eq(["billing:27"])
+      expect(comparison.resolved.map(&:digest)).to eq(["billing:25"])
+      expect(comparison.new_signatures).to be_empty
+    end
+
+    it "pairs moved signatures without hiding an excess new signature" do
+      comparison = described_class.new(
+        previous: run(failures: 1, signatures: [signature("billing:25", "shared")]),
+        current: run(failures: 2, signatures: [signature("billing:27", "shared"),
+                                               signature("pricing:10", "shared")])
+      )
+
+      expect(comparison.changed.map(&:digest)).to eq(["billing:27"])
+      expect(comparison.new_signatures.map(&:digest)).to eq(["pricing:10"])
+      expect(comparison.resolved).to be_empty
+    end
+  end
+
   describe "#headline" do
     it "reads as a sentence and carries the failure counts" do
       comparison = described_class.new(
@@ -71,7 +97,7 @@ RSpec.describe RSpec::Signal::Comparison do
         current: run(failures: 17, signatures: [signature("a", "la"), signature("c", "lc")])
       )
 
-      expect(comparison.headline).to eq("1 resolved, 1 new, 1 still failing (42 -> 17 failures)")
+      expect(comparison.headline).to eq("Signatures: 1 resolved, 1 new, 1 persistent; failures: 42 -> 17")
     end
 
     it "is nil when two identical runs have nothing to report" do

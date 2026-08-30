@@ -9,10 +9,10 @@ module RSpec
     #   digest  the full fingerprint (exception, message, culprit, app context)
     #   loose   exception and message only -- independent of line numbers
     #
-    #   persistent  digest in both runs
-    #   resolved    digest gone, and its loose key is gone too
-    #   new         digest appeared, and its loose key is new too
-    #   changed     digest changed but the loose key survived
+    #   persistent  paired entries with the same digest
+    #   resolved    unpaired old entries after loose matching
+    #   new         unpaired new entries after loose matching
+    #   changed     remaining old/new entries paired by loose key
     #
     # The fourth bucket is what makes the other three trustworthy. Editing the
     # file that raises shifts every culprit line, which without it turns every
@@ -46,11 +46,11 @@ module RSpec
         parts = []
         parts << "#{resolved.size} resolved" unless resolved.empty?
         parts << "#{new_signatures.size} new" unless new_signatures.empty?
-        parts << "#{persistent.size} still failing" unless persistent.empty?
-        parts << "#{changed.size} changed signature" unless changed.empty?
+        parts << "#{persistent.size} persistent" unless persistent.empty?
+        parts << "#{changed.size} changed" unless changed.empty?
         return nil if parts.empty?
 
-        "#{parts.join(", ")} (#{previous_failures} -> #{failure_count} failures)"
+        "Signatures: #{parts.join(", ")}; failures: #{previous_failures} -> #{failure_count}"
       end
 
       def to_h
@@ -74,25 +74,25 @@ module RSpec
         end
       end
 
-      # Membership is looked up rather than scanned: a suite with a thousand
-      # signatures would otherwise compare each against every other.
+      # Pairing is cardinality-aware so signatures that share a loose key do
+      # not hide resolved or new failures. Hash-backed queues keep the work
+      # linear even for suites with many signatures.
       def classify(before, after)
-        before_digests = index(before, :digest)
-        after_digests = index(after, :digest)
-        before_loose = index(before, :loose)
-        after_loose = index(after, :loose)
-
-        @persistent = after.select { |entry| before_digests.key?(entry.digest) }
-        gone = before.reject { |entry| after_digests.key?(entry.digest) }
-        arrived = after.reject { |entry| before_digests.key?(entry.digest) }
-
-        @changed = arrived.select { |entry| before_loose.key?(entry.loose) }
-        @new_signatures = arrived - @changed
-        @resolved = gone.reject { |entry| after_loose.key?(entry.loose) }
+        @persistent, gone, arrived = pair(before, after, :digest)
+        @changed, @resolved, @new_signatures = pair(gone, arrived, :loose)
       end
 
-      def index(entries, attribute)
-        entries.to_h { |entry| [entry.public_send(attribute), true] }
+      def pair(before, after, attribute)
+        available = before.group_by { |entry| entry.public_send(attribute) }
+        matched_before = {}
+        matched_after, unmatched_after = after.partition do |entry|
+          match = available[entry.public_send(attribute)]&.shift
+          matched_before[match.object_id] = true if match
+          match
+        end
+
+        unmatched_before = before.reject { |entry| matched_before.key?(entry.object_id) }
+        [matched_after, unmatched_before, unmatched_after]
       end
     end
   end

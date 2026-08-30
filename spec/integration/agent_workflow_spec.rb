@@ -108,7 +108,7 @@ RSpec.describe "the agent workflow", :integration do
 
       run = project.run_signal
 
-      expect(run.stdout).to include("Since last run: 1 resolved, 1 still failing (2 -> 1 failures)")
+      expect(run.stdout).to include("Since last run: Signatures: 1 resolved, 1 persistent; failures: 2 -> 1")
     end
 
     # The property that makes the other buckets trustworthy. An edit that
@@ -126,7 +126,7 @@ RSpec.describe "the agent workflow", :integration do
 
       run = project.run_signal
 
-      expect(run.stdout).to include("2 changed signature")
+      expect(run.stdout).to include("Signatures: 2 changed")
       expect(run.stdout).not_to include("resolved")
     end
 
@@ -137,7 +137,7 @@ RSpec.describe "the agent workflow", :integration do
       green = project.run_signal
 
       expect(green.status).to eq(0)
-      expect(green.stdout).to include("2 resolved (2 -> 0 failures)")
+      expect(green.stdout).to include("Signatures: 2 resolved; failures: 2 -> 0")
       expect(project.artifact?("signal.md")).to be(false)
       expect(project.artifact?("history.json")).to be(true)
     end

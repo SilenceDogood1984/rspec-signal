@@ -23,11 +23,17 @@ module RSpec
       # the budgets cap how much of it reaches the Markdown report.
       attr_accessor :relate_failures, :max_clusters, :max_cluster_specs
 
+      # Shared code-path analysis. `code_path_depth` is how far in from the
+      # raise site first-party frames are indexed; `max_code_paths` caps how
+      # many reach the Markdown report.
+      attr_accessor :code_path_depth, :max_code_paths
+
       # Secret scrubbing.
       attr_accessor :redact, :redaction_patterns, :redaction_filter
 
-      # Artifacts.
-      attr_accessor :write_json, :write_full, :write_gitignore
+      # Artifacts. `track_history` keeps a small record of recent runs beside
+      # them so a run can say what changed since the last one.
+      attr_accessor :write_json, :write_full, :write_gitignore, :track_history
 
       # Behaviour.
       attr_accessor :enabled, :terminal_summary, :capture_capybara, :capture_page_html
@@ -115,6 +121,8 @@ module RSpec
         @max_groups            = nil
         @max_clusters          = 10
         @max_cluster_specs     = 6
+        @code_path_depth       = CodePaths::DEFAULT_DEPTH
+        @max_code_paths        = 5
       end
 
       def default_artifacts
@@ -126,6 +134,7 @@ module RSpec
         @write_json         = true
         @write_full         = false
         @write_gitignore    = true
+        @track_history      = true
         @capture_capybara   = true
         @capture_page_html  = false
       end

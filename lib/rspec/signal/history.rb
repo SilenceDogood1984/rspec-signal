@@ -10,8 +10,8 @@ module RSpec
     # what changed rather than describing itself as if it were the first.
     #
     # Signature digests and counts contain no messages or source. Selection
-    # entries add only a digest, example count, and the selected spec filenames
-    # so a developer can diagnose why two runs did not compare. The file stays
+    # entries add only a digest and normalized scope details so a developer can
+    # diagnose why two runs did not compare. The file stays
     # small by construction and is capped at {MAX_RUNS}.
     #
     # It survives a green run on purpose: "42 failures became 0" is the most

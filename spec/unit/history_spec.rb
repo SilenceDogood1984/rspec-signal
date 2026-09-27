@@ -9,7 +9,7 @@ RSpec.describe RSpec::Signal::History do
   end
 
   let(:full_selection) do
-    RSpec::Signal::Selection.new(%w[./spec/a_spec.rb[1:1] ./spec/b_spec.rb[1:1]])
+    RSpec::Signal::Selection.new(paths: ["spec"])
   end
 
   def report_with(failures, selection: full_selection)
@@ -31,13 +31,13 @@ RSpec.describe RSpec::Signal::History do
 
   it "does not compare a one-example rerun with a full-suite run" do
     history.record(report_with([failure]), run_id: "full")
-    targeted = RSpec::Signal::Selection.new(["./spec/a_spec.rb[1:1]"])
+    targeted = RSpec::Signal::Selection.new(paths: ["spec/a_spec.rb:2"])
 
     expect(described_class.new(config).compare(report_with([], selection: targeted), run_id: "targeted")).to be_nil
   end
 
   it "compares the same targeted example on later runs" do
-    targeted = RSpec::Signal::Selection.new(["./spec/a_spec.rb[1:1]"])
+    targeted = RSpec::Signal::Selection.new(paths: ["spec/a_spec.rb:2"])
     history.record(report_with([failure], selection: targeted), run_id: "first-targeted")
 
     comparison = described_class.new(config).compare(report_with([], selection: targeted), run_id: "again")
@@ -47,7 +47,7 @@ RSpec.describe RSpec::Signal::History do
   end
 
   it "finds the previous equivalent full run across an intervening targeted run" do
-    targeted = RSpec::Signal::Selection.new(["./spec/a_spec.rb[1:1]"])
+    targeted = RSpec::Signal::Selection.new(paths: ["spec/a_spec.rb:2"])
     history.record(report_with([failure]), run_id: "full")
     described_class.new(config).record(report_with([], selection: targeted), run_id: "targeted")
 
@@ -57,19 +57,30 @@ RSpec.describe RSpec::Signal::History do
   end
 
   it "does not compare different file selections" do
-    file_a = RSpec::Signal::Selection.new(["./spec/a_spec.rb[1:1]"])
-    file_b = RSpec::Signal::Selection.new(["./spec/b_spec.rb[1:1]"])
+    file_a = RSpec::Signal::Selection.new(paths: ["spec/a_spec.rb"])
+    file_b = RSpec::Signal::Selection.new(paths: ["spec/b_spec.rb"])
     history.record(report_with([failure], selection: file_a), run_id: "a")
 
     expect(described_class.new(config).compare(report_with([], selection: file_b), run_id: "b")).to be_nil
   end
 
   it "treats the same files and examples in different order as equivalent" do
-    reversed = RSpec::Signal::Selection.new(full_selection.example_ids.reverse)
-    history.record(report_with([failure]), run_id: "ordered")
+    ordered = RSpec::Signal::Selection.new(paths: %w[spec/a_spec.rb spec/b_spec.rb])
+    reversed = RSpec::Signal::Selection.new(paths: ordered.paths.reverse)
+    history.record(report_with([failure], selection: ordered), run_id: "ordered")
 
     expect(described_class.new(config).compare(report_with([], selection: reversed), run_id: "reversed"))
       .not_to be_nil
+  end
+
+  it "compares full suites when the number of examples changes" do
+    history.record(report_with([failure]), run_id: "two-examples")
+    current = build_report([], example_count: 3, failure_count: 0, selection: full_selection)
+
+    comparison = described_class.new(config).compare(current, run_id: "three-examples")
+
+    expect(comparison.resolved.size).to eq(1)
+    expect(comparison.previous_run_id).to eq("two-examples")
   end
 
   it "does not compare reports without selection metadata" do

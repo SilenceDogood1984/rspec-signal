@@ -135,7 +135,7 @@ RSpec.describe "with relationships switched off", :integration do
   end
 
   def normalize_history(text)
-    JSON.parse(text)["runs"].map { |run| run.reject { |key, _| %w[run_id at].include?(key) } }
+    JSON.parse(text)["runs"].map { |run| run.reject { |key, _| %w[run_id at selection].include?(key) } }
   end
 
   # Two runs, so the second can say what changed since the first.

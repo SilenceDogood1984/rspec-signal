@@ -84,13 +84,11 @@ module RSpec
       end
 
       def merge_selection(payloads)
-        selections = payloads.map do |payload|
-          data = payload["selection"]
-          next unless data.is_a?(Hash) && data["example_ids"].is_a?(Array)
+        selections = payloads.filter_map { |payload| Selection.from_h(payload["selection"]) }
+        return if selections.empty?
+        return selections.first if selections.all? { |selection| selection.equivalent?(selections.first) }
 
-          Selection.new(data["example_ids"])
-        end
-        Selection.merge(selections)
+        nil
       end
 
       def load_outside(payloads)

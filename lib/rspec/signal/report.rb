@@ -153,7 +153,7 @@ module RSpec
         # The parent analyses the whole run from every worker's evidence and
         # census; a worker's own partial analysis would only mislead.
         payload = to_h(config, include_analysis: false).merge(schema: WORKER_SCHEMA, failures: serialized)
-        payload[:selection] = selection&.to_h(include_ids: true)
+        payload[:selection] = selection&.to_h
         census ? payload.merge(census: census.to_h) : payload
       end
 

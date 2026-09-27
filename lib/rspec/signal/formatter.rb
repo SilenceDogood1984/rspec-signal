@@ -18,10 +18,11 @@ module RSpec
 
       MAX_TOP_CODE_PATHS = 2
 
-      attr_reader :output
+      attr_reader :output, :config
 
       def initialize(output)
         @output = output
+        @config = RSpec::Signal.configuration
         @failures = []
         @outside = []
         @errors = []
@@ -29,10 +30,6 @@ module RSpec
         @seed = nil
         @seed_used = false
         @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
-      end
-
-      def config
-        RSpec::Signal.configuration
       end
 
       def start(notification)

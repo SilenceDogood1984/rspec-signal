@@ -75,7 +75,8 @@ module CausalCorpus
 
   def run(scenario, parallel: false)
     project = SandboxProject.new
-    project.install_spec_helper(scenario.fetch(:helper, ""))
+    project.install_spec_helper("RSpec::Signal.configure { |c| c.causal_analysis = true }\n#{scenario.fetch(:helper,
+                                                                                                            "")}")
     scenario.fetch(:files).each { |path, contents| project.write(path, contents) }
     run = if parallel
             project.run_signal_parallel(*scenario.fetch(:parallel_args,

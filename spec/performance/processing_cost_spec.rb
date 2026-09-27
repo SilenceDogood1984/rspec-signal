@@ -100,8 +100,8 @@ RSpec.describe "processing cost", :performance do
   end
 
   it "relates the failures of a large run quickly, and roughly linearly" do
-    small = build_report(with_evidence(build_failures(100)))
-    large = build_report(with_evidence(build_failures(800)))
+    small = build_report(with_evidence(build_failures(100)), causal_analysis: true)
+    large = build_report(with_evidence(build_failures(800)), causal_analysis: true)
     analyse = ->(report) { Benchmark.realtime { RSpec::Signal::Causal::Analysis.call(report) } }
     [small, large].each { |report| analyse.call(report) }
 

@@ -629,9 +629,9 @@ order.
 ## Relationships (experimental)
 
 Signatures say which failures are *the same failure*. This layer says which signatures
-are related, and only by facts it can check. It is experimental: on by default, and
-`config.causal_analysis = false` removes it. When it has nothing to add beyond the
-signatures, it prints nothing.
+are related, and only by facts it can check. It is experimental and **off by default**;
+turn it on with `config.causal_analysis = true`. It builds on signatures, so it is only
+as good as they are. When it has nothing to add beyond the signatures, it prints nothing.
 
 ```text
 CAUSAL · HIGH · 5 failures in 1 signature
@@ -744,8 +744,8 @@ RSpec::Signal.configure do |config|
   config.code_path_depth = 5   # first-party frames indexed, from the raise site in
   config.max_code_paths  = 5   # paths rendered in full (nil = all)
 
-  # Relationships (experimental; see "Relationships").
-  config.causal_analysis = true
+  # Relationships (experimental, off by default; see "Relationships").
+  config.causal_analysis = false
 
   # Artifacts.
   config.write_json      = true

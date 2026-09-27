@@ -1,7 +1,8 @@
 # Design: Causal Failure Intelligence
 
-Status: **spike implemented** (experimental, on by default, `config.causal_analysis = false`
-turns it off). The spike changed several assumptions below; [§0](#0-spike-results) is
+Status: **spike implemented**, experimental and **off by default**
+(`config.causal_analysis = true` turns it on). Not ready for production; see
+[Before production](#before-production). The spike changed several assumptions below; [§0](#0-spike-results) is
 authoritative where it and the original proposal disagree, and the superseded passages
 are marked in place.
 
@@ -128,6 +129,39 @@ About 0.1 ms of capture per failure (the existing per-failure pipeline is about 
 about 3 µs of counting per example (7 KB of counters for 10,000 examples in 300 files),
 and about 25 ms of analysis for 400 signatures. Worker payloads gain one small `evidence`
 hash per failure and a `census`; no backtraces or exception objects cross processes.
+
+### Before production
+
+Review of the spike raised a sequencing problem that outranks everything above.
+
+**This layer treats signatures as authoritative, and signature identity is currently
+wrong in important real-world cases.** RSpec's rendered `Failure/Error:` source echo
+reaches the fingerprint, so the same failure reached from different spec lines splits
+into different signatures. A separate audit measured one broken factory becoming 9
+signatures and one wrong constant becoming 61. Relating those fragments afterwards is a
+repair of damage the signature layer should not have done. Order of work:
+
+1. Fix fingerprint identity so rendered `Failure/Error:` text cannot fragment one
+   problem. (The spike's link key already avoids this by normalizing the exception's own
+   message; the fingerprint should too.)
+2. Fix the stale-report lifecycle.
+3. Make stdout answer-first.
+4. Re-run the audit's dogfood corpus.
+5. Only then measure what this layer adds *beyond improved signatures*. Several corpus
+   wins (the missing constant referenced from two spec lines, for instance) may simply
+   disappear into correct signatures, and that is the result to hope for.
+
+Until then the layer stays off by default: its selling point is trust, and a default-on
+experiment spends trust it has not earned.
+
+**Size constraint.** `Causal::Analysis` already owns union-find, evidence semantics,
+scope rules, hints, confidence, accounting and ordering. That is acceptable for a
+spike. For production it must not become the place every new heuristic lands. Evidence
+types should be separable, and every one should arrive with corpus scenarios that
+attack it.
+
+**What stands on its own.** The parallel loose-digest fix and boot-error deduplication
+are independent of this layer and should ship separately.
 
 ---
 

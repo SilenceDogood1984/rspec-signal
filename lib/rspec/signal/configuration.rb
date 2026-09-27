@@ -29,6 +29,8 @@ module RSpec
       attr_accessor :code_path_depth, :max_code_paths
 
       # Experimental relationship analysis (causal / scope / independent groups).
+      # Off by default until it has been dogfooded on real suites, and until
+      # signature identity -- which it treats as authoritative -- is repaired.
       # See docs/design/causal-failure-intelligence.md.
       attr_accessor :causal_analysis
 
@@ -132,7 +134,7 @@ module RSpec
       def default_artifacts
         @reduce_html        = true
         @relate_failures    = true
-        @causal_analysis    = true
+        @causal_analysis    = false
         @redact             = true
         @redaction_patterns = []
         @redaction_filter   = nil

@@ -24,7 +24,7 @@ module RSpec
                      duration: nil, seed: nil, seed_used: false, environment: {},
                      errors_outside_examples: 0, relate_failures: true, outside_example_failures: [],
                      run_id: nil, code_path_depth: CodePaths::DEFAULT_DEPTH, census: nil,
-                     causal_analysis: true)
+                     causal_analysis: false)
         @failures = failures
         @groups = Grouper.call(failures)
         @clusters = relate_failures ? safely { Clusterer.call(failures) } : []

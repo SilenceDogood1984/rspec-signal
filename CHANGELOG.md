@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in one file or `type:`, with no confidence and no cause wording) or INDEPENDENT, and the
   run says how many failures it accounted for. Printed only when it adds something to the
   signatures; published as `analysis` in `signal.json`; evaluated by a corpus of real runs
-  in `spec/causal/`. Turn it off with `config.causal_analysis = false`.
+  in `spec/causal/`. Off by default; turn it on with `config.causal_analysis = true`.
 - **Shared code paths.** A third analysis layer that reads the *stack* rather than
   the message, and reports the first-party lines that more than one signature runs
   through. This relates failures whose messages have nothing in common — a `KeyError`

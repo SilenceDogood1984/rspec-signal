@@ -8,7 +8,7 @@ RSpec.describe RSpec::Signal::Reporters::Relationships do
   end
 
   def lines(failures)
-    described_class.new(build_report(failures).analysis).terminal_lines
+    described_class.new(build_report(failures, causal_analysis: true).analysis).terminal_lines
   end
 
   it "prints nothing when it has nothing to add to the signatures" do
@@ -34,7 +34,9 @@ RSpec.describe RSpec::Signal::Reporters::Relationships do
   end
 
   describe "when rendering fails" do
-    let(:report) { build_report([build_failure(backtrace: [Backtraces.app("lib/a.rb", 1, "call")])]) }
+    let(:report) do
+      build_report([build_failure(backtrace: [Backtraces.app("lib/a.rb", 1, "call")])], causal_analysis: true)
+    end
 
     before do
       %i[to_h markdown terminal_lines].each do |method|

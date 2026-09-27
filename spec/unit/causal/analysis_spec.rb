@@ -12,7 +12,7 @@ RSpec.describe RSpec::Signal::Causal::Analysis do
   end
 
   def analyse(failures, outside: [])
-    report = build_report(failures, census: census, outside_example_failures: outside,
+    report = build_report(failures, census: census, outside_example_failures: outside, causal_analysis: true,
                                     errors_outside_examples: outside.size)
     report.analysis
   end
@@ -84,12 +84,15 @@ RSpec.describe RSpec::Signal::Causal::Analysis do
   end
 
   it "accounts for every failure, and says when RSpec reported more than it captured" do
-    report = build_report([failure("a"), failure("b")], census: census, failure_count: 3)
+    report = build_report([failure("a"), failure("b")], census: census, failure_count: 3, causal_analysis: true)
 
     expect([report.analysis.accounted, report.analysis.not_captured]).to eq([2, 1])
   end
 
-  it "is switched off entirely by configuration" do
-    expect(build_report([failure("a")], causal_analysis: false).analysis).to be_nil
+  # Its selling point is trust, so it stays opt-in until it has been
+  # dogfooded on real suites and signature identity has been repaired.
+  it "is off unless asked for" do
+    expect(RSpec::Signal::Configuration.new.causal_analysis).to be(false)
+    expect(build_report([failure("a")]).analysis).to be_nil
   end
 end

@@ -127,6 +127,27 @@ RSpec.describe RSpec::Signal::ParallelMerger do
     end
   end
 
+  # The loose digest is what lets a run comparison call an edit that moved a
+  # raise site "changed" rather than "resolved + new". Rebuilt from a worker
+  # payload it used to be derived from a placeholder message, so every
+  # signature with the same exception class shared one loose key.
+  it "keeps each signature's own loose digest across the worker boundary" do
+    config = RSpec::Signal.configuration
+    config.output_dir = output
+    config.reset_memoized!
+    originals = %w[first second].map do |text|
+      build_failure(backtrace: [Backtraces.app("app/models/a.rb", 3, "call")], message: ["#{text} problem"],
+                    exception_class: "KeyError", example_id: "./spec/a_spec.rb[1:#{text.size}]")
+    end
+    payloads = originals.map { |item| JSON.parse(JSON.generate(item.to_h.merge(fingerprint: item.fingerprint.to_h))) }
+    write_worker("1", examples: 2, failures: payloads)
+
+    merged = described_class.new(registry: registry, config: config).call.report.groups
+
+    expect(merged.map { |group| group.fingerprint.loose_digest })
+      .to match_array(originals.map { |item| item.fingerprint.loose_digest })
+  end
+
   def write_worker(worker, examples:, failures:, configuration: {})
     path = File.join(registry, "worker-#{worker}.json")
     data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,

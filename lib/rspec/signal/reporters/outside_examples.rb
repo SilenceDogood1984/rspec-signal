@@ -22,8 +22,10 @@ module RSpec
           return [] unless @report.errors_outside_examples.positive?
 
           captured = @report.outside_example_failures
+          # A helper every spec file requires fails once per file, identically.
+          # One section per distinct error, naming every file it stopped.
           [heading(captured.size)] +
-            captured.each_with_index.map { |failure, index| section(failure, index + 1) }
+            Grouper.call(captured).each_with_index.map { |group, index| section(group, index + 1) }
         end
 
         private
@@ -43,15 +45,34 @@ module RSpec
             "the full text is in RSpec's own output."
         end
 
-        def section(failure, position)
+        def section(group, position)
+          failure = group.failures.first
           [
-            ["### E#{position}. #{failure.exception_class}", "", "> #{one_line(failure.description)}"].join("\n"),
+            ["### E#{position}. #{failure.exception_class}#{count_suffix(group)}", "",
+             "> #{one_line(failure.description)}"].join("\n"),
             fenced(failure.message.body(max_lines: @config.max_message_lines,
                                         max_diff_lines: @config.max_diff_lines)),
-            "- Raised in `#{failure.spec_location}`",
+            locators(group),
             labelled("Trace", fenced(trace(failure))),
-            labelled("Rerun", fenced([Rerun.command([failure.rerun_argument])], "bash"))
+            labelled("Rerun", fenced([Rerun.command(group.rerun_arguments)], "bash"))
           ].join("\n\n")
+        end
+
+        def count_suffix(group)
+          group.size == 1 ? "" : " -- #{group.size} times"
+        end
+
+        def locators(group)
+          lines = ["- Raised in `#{group.failures.first.spec_location}`"]
+          return lines.join("\n") if group.size == 1
+
+          files = group.rerun_arguments.map { |file| "`#{file.sub(%r{\A\./}, "")}`" }
+          lines << if group.failures.all? { |failure| failure.description.include?("while loading") }
+                     "- Stopped #{files.size} spec files from loading: #{files.join(", ")}"
+                   else
+                     "- Reported #{group.size} times, from: #{files.join(", ")}"
+                   end
+          lines.join("\n")
         end
 
         def trace(failure)

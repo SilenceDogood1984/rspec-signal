@@ -64,7 +64,8 @@ module RSpec
       end
 
       def to_h
-        { exception: exception_class, culprit: culprit, app_context: app_context, digest: digest }.compact
+        { exception: exception_class, culprit: culprit, app_context: app_context, digest: digest,
+          loose: loose_digest }.compact
       end
     end
   end

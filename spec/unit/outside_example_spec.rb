@@ -99,6 +99,37 @@ RSpec.describe RSpec::Signal::OutsideExample do
     end
   end
 
+  # A helper every spec file requires that fails at boot is one error RSpec
+  # reports once per file. Captured verbatim from a real run.
+  describe "the same boot failure in several spec files" do
+    def boot_error(file)
+      "\nAn error occurred while loading ./spec/boot/#{file}_spec.rb.\n" \
+        "Failure/Error: ENV.fetch(\"DATABASE_URL\")\n\nKeyError:\n  key not found: \"DATABASE_URL\"\n" \
+        "# ./spec/boot_helper.rb:1:in `fetch'\n# ./spec/boot_helper.rb:1:in `<top (required)>'\n" \
+        "# ./spec/boot/#{file}_spec.rb:1:in `require_relative'\n# ./spec/boot/#{file}_spec.rb:1:in `<top (required)>'\n"
+    end
+
+    let(:report) do
+      failures = %w[invoices orders users].map.with_index do |file, i|
+        described_class.build(boot_error(file), config, position: i + 1)
+      end
+      build_report([], outside_example_failures: failures, errors_outside_examples: 3)
+    end
+
+    it "renders it once, not once per file" do
+      rendered = RSpec::Signal::Reporters::OutsideExamples.new(report, config).render.join("\n")
+
+      expect(rendered.scan("### E").size).to eq(1)
+    end
+
+    it "still names every file that failed to load, and reruns them all" do
+      rendered = RSpec::Signal::Reporters::OutsideExamples.new(report, config).render.join("\n")
+
+      expect(rendered).to include("spec/boot/invoices_spec.rb", "spec/boot/orders_spec.rb", "spec/boot/users_spec.rb")
+      expect(rendered).to include("./spec/boot/invoices_spec.rb ./spec/boot/orders_spec.rb ./spec/boot/users_spec.rb")
+    end
+  end
+
   it "returns nil rather than raising on text it cannot parse" do
     expect(described_class.build(nil, config)).to be_nil
   end

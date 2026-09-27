@@ -110,7 +110,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "adds its own two-line summary" do
-      expect(run.stdout).to include("rspec-signal: 2 failures in 2 distinct signatures")
+      expect(run.stdout).to include("Signal problems: 2 failures, 2 distinct problems")
       expect(run.stdout).to include("Report: tmp/rspec-signal/signal.md")
     end
 
@@ -175,7 +175,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "collapses the repeated root cause into one signature" do
-      expect(run.stdout).to include("rspec-signal: 3 failures in 1 distinct signature")
+      expect(run.stdout).to include("Signal problems: 3 failures, 1 distinct problem")
     end
 
     it "keeps every affected example" do
@@ -227,7 +227,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "reports one signature, not one per call site" do
-      expect(run.stdout).to include("rspec-signal: 4 failures in 1 distinct signature")
+      expect(run.stdout).to include("Signal problems: 4 failures, 1 distinct problem")
     end
 
     it "still shows the reader the first call site's source line" do
@@ -347,8 +347,10 @@ RSpec.describe "a real rspec run", :integration do
 
       expect(run.status).to eq(1)
       expect(run.output.bytesize).to be < 2_000
-      expect(run.output).to include("1 examples, 1 failures", "Report: tmp/rspec-signal/signal.md")
-      expect(run.output).not_to include("framework/runtime noise line 1000", "useful diagnostic")
+      expect(run.output).to include("RSpec totals: 1 example, 1 failure, 0 pending",
+                                    "Top problem: ArgumentError: useful diagnostic: invalid reader state",
+                                    "Report: tmp/rspec-signal/signal.md")
+      expect(run.output).not_to include("framework/runtime noise line 1000")
     end
 
     it "writes compact artifacts without the full output by default" do
@@ -363,7 +365,7 @@ RSpec.describe "a real rspec run", :integration do
     it "does not register a duplicate formatter or verbose output" do
       run = project.run_signal
 
-      expect(run.output.scan("rspec-signal:").size).to eq(1)
+      expect(run.output.scan("Top problem:").size).to eq(1)
       expect(run.output).not_to include("Failures:", "Failed examples:")
     end
 
@@ -375,7 +377,7 @@ RSpec.describe "a real rspec run", :integration do
       run = project.run_signal
 
       expect(run.status).to eq(0)
-      expect(run.output).to include("1 examples, 0 failures")
+      expect(run.output).to include("RSpec totals: 1 example, 0 failures, 0 pending")
       expect(run.output).not_to include("Report:", "rspec-signal:")
       stale_artifacts = %w[signal.md signal.json full.txt].select { |name| project.artifact?(name) }
       expect(stale_artifacts).to be_empty
@@ -512,11 +514,11 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "keeps them as separate signatures" do
-      expect(run.stdout).to include("2 failures in 2 distinct signatures")
+      expect(run.stdout).to include("2 failures, 2 distinct problems")
     end
 
-    it "reports one related cluster on the terminal too" do
-      expect(run.stdout).to include("1 related cluster")
+    it "makes both distinct problems visible on the terminal" do
+      expect(run.stdout).to include("Signal problems: 2 failures, 2 distinct problems", "Problem #1", "Problem #2")
     end
 
     it "explains the shared symptom in the report" do
@@ -616,6 +618,27 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.stdout).to include("20 examples, 20 failures")
       expect(signal_lines).to be < rspec_lines / 4
       expect(run.summary).to include("1 distinct signature")
+    end
+  end
+
+  describe "single-failure terminal budget" do
+    it "adds at most an exact rerun and report pointer to native RSpec" do
+      project.install_spec_helper
+      project.write("spec/one_failure_spec.rb", <<~RUBY)
+        RSpec.describe "one failure" do
+          it("fails") { expect(1).to eq(2) }
+        end
+      RUBY
+
+      native = project.run("spec/one_failure_spec.rb", env: { "RSPEC_SIGNAL_DISABLE" => "1" })
+      signal = project.run("spec/one_failure_spec.rb")
+      added_lines = signal.stdout.lines.size - native.stdout.lines.size
+      added_bytes = signal.stdout.bytesize - native.stdout.bytesize
+
+      expect(signal.stdout).to include("Exact rerun: bundle exec rspec", "Report: tmp/rspec-signal/signal.md")
+      expect(signal.stdout).not_to include("1 failure in 1 distinct", "frames omitted")
+      expect(added_lines).to be_between(2, 4)
+      expect(added_bytes).to be_between(1, 250)
     end
   end
 end

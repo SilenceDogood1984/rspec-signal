@@ -13,12 +13,8 @@ module RSpec
     # verbose failure renderer. When auto-installed it restores the default
     # formatter so requiring the gem does not change normal human output.
     class Formatter
-      include FormatterOutput
-
       ::RSpec::Core::Formatters.register self, :start, :example_passed, :example_failed,
                                          :example_pending, :message, :dump_summary, :seed, :close
-
-      MAX_TOP_CODE_PATHS = 2
 
       attr_reader :output, :config
 
@@ -204,6 +200,12 @@ module RSpec
         @run_status.history_eligible?(outside_errors: outside_example_count)
       end
 
+      def comparison_skipped_reason
+        return unless config.track_history
+
+        @run_status.skipped_reason(outside_errors: outside_example_count)
+      end
+
       def start_progress(total)
         return unless config.enabled? && RSpec::Signal.quiet_mode?
         return if ParallelRun.worker?
@@ -226,6 +228,22 @@ module RSpec
 
       def writer
         @writer ||= Writer.new(config)
+      end
+
+      # Stdout is a tool call's return value, so lead with the result and the
+      # exact next action; detailed diagnostics belong in the artifacts.
+      def print_summary(result, current)
+        return unless config.terminal_summary
+
+        path = writer.relative(result.summary_path) if result.summary_path
+        lines = TerminalSummary.new(current, report_path: path, quiet: RSpec::Signal.quiet_mode?,
+                                              comparison_skipped_reason: comparison_skipped_reason).lines
+        return if lines.empty?
+
+        @output.puts
+        lines.each { |line| @output.puts line }
+      rescue StandardError => e
+        record_error(e)
       end
 
       def record_error(error)

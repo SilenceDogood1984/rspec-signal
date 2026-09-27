@@ -236,7 +236,7 @@ RSpec.describe "the agent workflow", :integration do
     it "does not report a suite with an unloadable file as having zero problems" do
       run = project.run_signal
 
-      expect(run.stdout).to include("1 error outside examples")
+      expect(run.stdout).to include("Outside examples: 1 error")
     end
 
     it "writes a report even though no example failed" do

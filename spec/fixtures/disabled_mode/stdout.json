@@ -1,6 +1,12 @@
 [
-  "21 examples, 8 failures, 0 pending",
-  "rspec-signal: 8 failures in 5 distinct signatures (N omitted)",
+  "RSpec totals: 21 examples, 8 failures, 0 pending",
+  "Signal problems: 8 failures, 5 distinct problems",
+  "Problem #1 (3 failures): FakeBot::RecordInvalid: Validation failed: Organization must exist",
+  "Exact rerun: bundle exec rspec './spec/users_spec.rb[1:1]'",
+  "Problem #2 (2 failures): RuntimeError: session store is not configured",
+  "Exact rerun: bundle exec rspec './spec/admin_spec.rb[1:1]'",
+  "Problem #3: Billing::RateUnavailable: no tax rate for region: eu-west",
+  "Exact rerun: bundle exec rspec './spec/billing_spec.rb[1:1]'",
   "Since last run: Signatures: 1 resolved, 5 persistent; failures: 9 -> 8",
   "Report: tmp/rspec-signal/signal.md"
 ]

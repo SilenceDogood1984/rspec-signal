@@ -482,7 +482,7 @@ by a deterministic fingerprint of four components:
 | Component | What it is |
 |-----------|-----------|
 | **exception class** | `Capybara::ElementNotFound`, `ActiveRecord::RecordInvalid`, ... |
-| **normalized message** | The message with volatile parts masked: object addresses, UUIDs, timestamps, record ids, temp paths. Small numbers are left alone — `expected 3, got 4` and `expected 7, got 2` are different failures. |
+| **normalized message** | The message with volatile parts masked: object addresses, UUIDs, timestamps, record ids, temp paths. Small numbers are left alone — `expected 3, got 4` and `expected 7, got 2` are different failures. RSpec's `Failure/Error:` echo of the failing source line is left out: for an error raised inside a gem it is each example's own call site. |
 | **culprit** | The innermost frame that is not test-runner plumbing: the code that actually raised. |
 | **app context** | The innermost first-party frame outside your spec suite. `nil` for a plain matcher failure; decisive when the same error comes from two different call sites. |
 
@@ -499,6 +499,8 @@ The four components are what stop over-collapsing:
 - Two identical `expect(x).to be true` failures in **different specs** stay apart —
   a matcher failure raises at the spec line, so the culprit differs.
 - The same missing record id in twenty specs collapses to one — ids are masked.
+- One broken factory `create`d from ten spec lines collapses to one — the error is
+  raised inside a gem, and the `Failure/Error:` echo of each call site is not identity.
 
 Each group renders one full trace, from the failure carrying the most first-party
 frames, plus every affected example's location. Groups are ordered largest first,

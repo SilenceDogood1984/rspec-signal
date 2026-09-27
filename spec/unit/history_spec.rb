@@ -59,6 +59,17 @@ RSpec.describe RSpec::Signal::History do
     expect(described_class.new(config).compare(report_with([failure]), run_id: "x")).to be_nil
   end
 
+  # Schema 1 digests included RSpec's source echo, so none of them matches a
+  # current digest. Comparing would report every signature as resolved and
+  # new; saying nothing for one run is the honest outcome.
+  it "ignores a schema 1 history, whose digests are not comparable" do
+    FileUtils.mkdir_p(File.dirname(history.path))
+    File.write(history.path, JSON.generate("schema" => 1, "runs" => [{ "run_id" => "old", "failures" => 3,
+                                                                       "signatures" => [] }]))
+
+    expect(described_class.new(config).compare(report_with([failure]), run_id: "new")).to be_nil
+  end
+
   it "ignores a history written by an incompatible future schema" do
     FileUtils.mkdir_p(File.dirname(history.path))
     File.write(history.path, JSON.generate({ "schema" => 99, "runs" => [{ "run_id" => "x" }] }))

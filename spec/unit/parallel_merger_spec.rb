@@ -148,6 +148,25 @@ RSpec.describe RSpec::Signal::ParallelMerger do
       .to match_array(originals.map { |item| item.fingerprint.loose_digest })
   end
 
+  it "merges one error echoed from different call sites on different workers into one signature" do
+    config = RSpec::Signal.configuration
+    config.output_dir = output
+    config.reset_memoized!
+    echoes = { "1" => "let(:user) { create(:user) }", "2" => "before { create(:user, :admin) }" }
+    echoes.each do |worker, echo|
+      failure = build_failure(backtrace: Backtraces.active_record_invalid,
+                              message: ["Failure/Error: #{echo}", "", "  Validation failed: Organization must exist"],
+                              exception_class: "ActiveRecord::RecordInvalid",
+                              example_id: "./spec/w#{worker}_spec.rb[1:1]")
+      serialized = JSON.parse(JSON.generate(failure.to_h.merge(fingerprint: failure.fingerprint.to_h)))
+      write_worker(worker, examples: 1, failures: [serialized])
+    end
+
+    groups = described_class.new(registry: registry, config: config).call.report.groups
+
+    expect(groups.map(&:size)).to eq([2])
+  end
+
   def write_worker(worker, examples:, failures:, configuration: {})
     path = File.join(registry, "worker-#{worker}.json")
     data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,

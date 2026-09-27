@@ -58,6 +58,45 @@ RSpec.describe "failure grouping" do
     end
   end
 
+  # One broken factory reached from many spec lines. The raise site is in a
+  # gem, so RSpec's `Failure/Error:` line echoes each example's call site;
+  # that text used to split one failure into one signature per call site.
+  describe "one error raised inside a gem, reached from different spec lines" do
+    def factory_failure(spec:, line:, echo:, message: "Validation failed: Organization must exist")
+      build_failure(
+        config: config,
+        backtrace: [Backtraces.gem("activerecord", "8.0.4", "active_record/validations.rb", 80,
+                                   "raise_validation_error"),
+                    Backtraces.gem("factory_bot", "6.4.6", "factory_bot/strategy/create.rb", 12, "result"),
+                    Backtraces.gem("factory_bot", "6.4.6", "factory_bot/syntax/methods.rb", 30, "create"),
+                    Backtraces.app(spec, line, "block (2 levels) in <top (required)>")] + Backtraces.rspec_tail,
+        exception_class: "ActiveRecord::RecordInvalid",
+        message: ["Failure/Error: #{echo}", "", "ActiveRecord::RecordInvalid:", "  #{message}"]
+      )
+    end
+
+    let(:failures) do
+      [factory_failure(spec: "spec/models/user_spec.rb", line: 4, echo: "let(:user) { create(:user) }"),
+       factory_failure(spec: "spec/requests/admin_spec.rb", line: 9, echo: "before { @admin = create(:user, :admin) }"),
+       factory_failure(spec: "spec/policies/team_spec.rb", line: 15, echo: "it { expect(create(:user)).to be_valid }")]
+    end
+
+    it "is one signature, whatever each call site's source line says" do
+      expect(RSpec::Signal::Grouper.call(failures).map(&:size)).to eq([3])
+    end
+
+    it "has one loose digest, so run comparison sees it as one failure too" do
+      expect(failures.map { |failure| failure.fingerprint.loose_digest }.uniq.size).to eq(1)
+    end
+
+    it "still keeps a different message from the same gem line apart" do
+      other = factory_failure(spec: "spec/models/user_spec.rb", line: 4, echo: "let(:user) { create(:user) }",
+                              message: "Validation failed: Email has already been taken")
+
+      expect(RSpec::Signal::Grouper.call(failures + [other]).size).to eq(2)
+    end
+  end
+
   describe "failures that look similar but are not" do
     it "keeps different missing selectors apart" do
       groups = RSpec::Signal::Grouper.call([

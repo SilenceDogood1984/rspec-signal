@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **RSpec's `Failure/Error:` source echo is no longer part of a signature.** When an
+  error is raised inside a gem -- a factory's `save!`, a driver call -- RSpec echoes
+  each example's own call site, so one broken factory used to become one signature per
+  `create` line. The echo is still shown; it just no longer decides identity.
+  Every digest changes once as a result, so `history.json` moves to schema 2 and an
+  older file is ignored: the first run after upgrading has no "since last run" line,
+  rather than reporting every signature as resolved and new.
 - **Rerun commands now name RSpec example ids rather than locations**, shell-quoted.
   A location selects every example defined on that line, so the printed command could
   rerun ten examples for a loop-generated `it`, and the *same* command could be

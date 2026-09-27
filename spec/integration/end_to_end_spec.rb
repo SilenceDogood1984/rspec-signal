@@ -315,8 +315,10 @@ RSpec.describe "a real rspec run", :integration do
 
       expect(run.status).to eq(1)
       expect(run.output.bytesize).to be < 2_000
-      expect(run.output).to include("1 examples, 1 failures", "Report: tmp/rspec-signal/signal.md")
-      expect(run.output).not_to include("framework/runtime noise line 1000", "useful diagnostic")
+      expect(run.output).to include("RSpec totals: 1 example, 1 failure, 0 pending",
+                                    "Top problem: ArgumentError: useful diagnostic: invalid reader state",
+                                    "Report: tmp/rspec-signal/signal.md")
+      expect(run.output).not_to include("framework/runtime noise line 1000")
     end
 
     it "writes compact artifacts without the full output by default" do
@@ -331,7 +333,7 @@ RSpec.describe "a real rspec run", :integration do
     it "does not register a duplicate formatter or verbose output" do
       run = project.run_signal
 
-      expect(run.output.scan("rspec-signal:").size).to eq(1)
+      expect(run.output.scan("Top problem:").size).to eq(1)
       expect(run.output).not_to include("Failures:", "Failed examples:")
     end
 
@@ -343,7 +345,7 @@ RSpec.describe "a real rspec run", :integration do
       run = project.run_signal
 
       expect(run.status).to eq(0)
-      expect(run.output).to include("1 examples, 0 failures")
+      expect(run.output).to include("RSpec totals: 1 example, 0 failures, 0 pending")
       expect(run.output).not_to include("Report:", "rspec-signal:")
       stale_artifacts = %w[signal.md signal.json full.txt].select { |name| project.artifact?(name) }
       expect(stale_artifacts).to be_empty
@@ -483,8 +485,8 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.stdout).to include("2 failures, 2 distinct problems")
     end
 
-    it "reports one related cluster on the terminal too" do
-      expect(run.stdout).to include("1 related cluster")
+    it "makes both distinct problems visible on the terminal" do
+      expect(run.stdout).to include("Signal problems: 2 failures, 2 distinct problems", "Problem #1", "Problem #2")
     end
 
     it "explains the shared symptom in the report" do

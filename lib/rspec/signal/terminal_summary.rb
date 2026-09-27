@@ -42,8 +42,8 @@ module RSpec
       end
 
       def totals_line
-        line = "RSpec totals: #{quantity(report.example_count, 'example')}, " \
-               "#{quantity(report.failure_count, 'failure')}, #{quantity(report.pending_count, 'pending')}"
+        line = "RSpec totals: #{quantity(report.example_count, "example")}, " \
+               "#{quantity(report.failure_count, "failure")}, #{quantity(report.pending_count, "pending", "pending")}"
         workers ? "#{line} across #{workers} workers" : line
       end
 
@@ -57,8 +57,8 @@ module RSpec
         return [] if report.failure_count == 1 && report.group_count == 1
         return [] unless report.failure_count.positive?
 
-        ["Signal problems: #{quantity(report.failure_count, 'failure')}, " \
-         "#{quantity(report.group_count, 'distinct problem')}"]
+        ["Signal problems: #{quantity(report.failure_count, "failure")}, " \
+         "#{quantity(report.group_count, "distinct problem")}"]
       end
 
       def exact_rerun
@@ -69,7 +69,7 @@ module RSpec
       def top_problems
         report.groups.first(MAX_PROBLEMS).each_with_index.flat_map do |group, index|
           label = report.group_count > 1 ? "Problem ##{index + 1}" : "Top problem"
-          count = group.size > 1 ? " (#{quantity(group.size, 'failure')})" : ""
+          count = group.size > 1 ? " (#{quantity(group.size, "failure")})" : ""
           ["#{label}#{count}: #{group.exception_class}: #{group.message.summary}",
            "Exact rerun: #{Rerun.command([group.representative.rerun_argument])}"]
         end
@@ -78,11 +78,17 @@ module RSpec
       def outside_errors
         return [] unless report.errors_outside_examples.positive?
 
-        lines = ["Outside examples: #{quantity(report.errors_outside_examples, 'error')}"]
         failure = report.outside_example_failures.first
-        lines << "Load problem: #{failure.exception_class}: #{failure.message.summary}" if failure
-        lines << "Exact rerun: #{Rerun.command([failure.rerun_argument])}" if failure
+        return exact_outside_rerun(failure) unless quiet || workers
+
+        lines = ["Outside examples: #{quantity(report.errors_outside_examples, "error")}"]
+        lines << "Load problem: #{failure.exception_class}: #{failure.message.summary}" if workers && failure
+        lines.concat(exact_outside_rerun(failure))
         lines
+      end
+
+      def exact_outside_rerun(failure)
+        failure ? ["Exact rerun: #{Rerun.command([failure.rerun_argument])}"] : []
       end
 
       # Existing relationship analysis is supporting context, never the
@@ -92,12 +98,12 @@ module RSpec
         paths = report.code_paths.first(MAX_CODE_PATHS)
         return lines if paths.empty?
 
-        rendered = paths.map { |path| "#{path.location} (#{quantity(path.signature_count, 'signature')})" }
-        lines + ["Shared code paths: #{rendered.join(', ')}"]
+        rendered = paths.map { |path| "#{path.location} (#{quantity(path.signature_count, "signature")})" }
+        lines + ["Shared code paths: #{rendered.join(", ")}"]
       end
 
-      def quantity(count, singular)
-        "#{count} #{count == 1 ? singular : "#{singular}s"}"
+      def quantity(count, singular, plural = "#{singular}s")
+        "#{count} #{count == 1 ? singular : plural}"
       end
     end
   end

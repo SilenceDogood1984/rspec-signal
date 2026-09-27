@@ -51,8 +51,11 @@ RSpec.describe "parallel_tests support", :integration do
 
     expect(run.status).not_to eq(0)
     expect(run.output.bytesize).to be < 8_000
-    expect(run.output).not_to include("parallel raw noise line 1000", "useful parallel diagnostic")
-    expect(project.read("signal.md")).to include("useful parallel diagnostic")
+    expect(run.output).not_to include("parallel raw noise line 1000")
+    expect([run.output, project.read("signal.md")]).to match([
+      include("Top problem: ArgumentError: useful parallel diagnostic"),
+      include("useful parallel diagnostic")
+    ])
   end
 
   it "fails aggregation and warns when a worker artifact disappears" do

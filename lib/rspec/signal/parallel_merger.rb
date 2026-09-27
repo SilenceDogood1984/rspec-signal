@@ -78,8 +78,19 @@ module RSpec
           errors_outside_examples: sum(summaries, "errors_outside_examples"),
           relate_failures: @config.relate_failures, code_path_depth: @config.code_path_depth,
           outside_example_failures: load_outside(payloads), run_id: run_id,
-          census: load_census(payloads), causal_analysis: @config.causal_analysis
+          census: load_census(payloads), causal_analysis: @config.causal_analysis,
+          selection: merge_selection(payloads)
         )
+      end
+
+      def merge_selection(payloads)
+        selections = payloads.map do |payload|
+          data = payload["selection"]
+          next unless data.is_a?(Hash) && data["example_ids"].is_a?(Array)
+
+          Selection.new(data["example_ids"])
+        end
+        Selection.merge(selections)
       end
 
       def load_outside(payloads)

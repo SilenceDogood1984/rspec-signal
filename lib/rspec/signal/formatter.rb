@@ -39,6 +39,7 @@ module RSpec
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
         RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
+        @selection = Selection.from_rspec
         start_progress(notification.count)
       end
 
@@ -130,7 +131,8 @@ module RSpec
           code_path_depth: config.code_path_depth,
           run_id: @run_id,
           census: @census,
-          causal_analysis: config.causal_analysis
+          causal_analysis: config.causal_analysis,
+          selection: @selection
         )
       end
 

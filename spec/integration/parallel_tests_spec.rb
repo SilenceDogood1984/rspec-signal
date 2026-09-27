@@ -79,8 +79,7 @@ RSpec.describe "parallel_tests support", :integration do
 
     expect(run.status).not_to eq(0)
     expect(run.output).to include("parallel report aggregation failed", "JSON::ParserError")
-    expect(project).not_to be_artifact("signal.md")
-    expect(project).not_to be_artifact("signal.json")
+    expect(%w[signal.md signal.json]).to all(satisfy { |name| !project.artifact?(name) })
   end
 
   it "merges full output in deterministic worker order when enabled" do

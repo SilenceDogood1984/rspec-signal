@@ -114,7 +114,6 @@ module RSpec
         warn_about_errors
       end
 
-      # @return [Report] exposed for testing and for tools that embed the gem.
       def report
         Report.new(
           failures: @failures,

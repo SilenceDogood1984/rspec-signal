@@ -51,10 +51,10 @@ class SandboxProject
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 
-  def run_signal(*args)
-    env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }
+  def run_signal(*args, env: {})
+    process_env = { "RUBYLIB" => [LIB, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARATOR) }.merge(env)
     stdout, stderr, status = Open3.capture3(
-      env, RbConfig.ruby, EXECUTABLE, "--require", "./spec/spec_helper.rb", "--no-color", *args, chdir: root
+      process_env, RbConfig.ruby, EXECUTABLE, "--require", "./spec/spec_helper.rb", "--no-color", *args, chdir: root
     )
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end

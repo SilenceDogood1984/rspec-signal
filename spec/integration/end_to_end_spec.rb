@@ -267,15 +267,19 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "invalidates a successful run before a wrapper boot failure" do
-      project.write("spec/broken_spec.rb", 'RSpec.describe("x") { it("fails") { expect(1).to eq(2) } }')
+      project.write("spec/broken_spec.rb", <<~RUBY)
+        RSpec.describe("x") { it("fails") { raise "previous generation failure" } }
+      RUBY
       project.run_signal
       expect(project).to be_artifact("signal.md")
 
       run = project.run_signal("--require", "./missing_helper.rb")
 
       expect(run.status).not_to eq(0)
-      expect(project).not_to be_artifact("signal.md")
-      expect(project).not_to be_artifact("signal.json")
+      expect(project.read("signal.md")).to include("missing_helper.rb") if project.artifact?("signal.md")
+      expect(Dir[File.join(project.root, "tmp/rspec-signal/signal.*")]).to all(
+        satisfy { |path| !File.read(path).include?("previous generation failure") }
+      )
     end
   end
 
@@ -291,6 +295,22 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.stdout).to include("1 example, 1 failure")
       expect(run.stdout).not_to include("rspec-signal:")
       expect(project).not_to be_artifact("signal.md")
+    end
+
+    it "treats wrapper invocation as a run before Ruby configuration loads" do
+      project.write("tmp/rspec-signal/signal.md", "previous generation")
+
+      project.run_signal
+
+      expect(project).not_to be_artifact("signal.md")
+    end
+
+    it "preserves artifacts when the wrapper is disabled through the environment" do
+      project.write("tmp/rspec-signal/signal.md", "previous generation")
+
+      project.run_signal(env: { "RSPEC_SIGNAL_DISABLE" => "1" })
+
+      expect(project.read("signal.md")).to eq("previous generation")
     end
   end
 

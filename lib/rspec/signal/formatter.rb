@@ -26,6 +26,9 @@ module RSpec
         @outside = []
         @errors = []
         @summary = {}
+        @summary_received = false
+        @selected_count = nil
+        @executed_count = 0
         @seed = nil
         @seed_used = false
         @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
@@ -39,15 +42,18 @@ module RSpec
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
         RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
-        start_progress(notification.count)
+        @selected_count = notification.count
+        start_progress(@selected_count)
       end
 
       def example_passed(notification)
         count_example(notification, failed: false)
+        @executed_count += 1
         advance_progress
       end
 
       def example_pending(_notification)
+        @executed_count += 1
         advance_progress
       end
 
@@ -59,6 +65,7 @@ module RSpec
       rescue StandardError => e
         record_error(e)
       ensure
+        @executed_count += 1
         advance_progress
       end
 
@@ -83,6 +90,7 @@ module RSpec
           duration: notification.duration,
           errors_outside_examples: notification.errors_outside_of_examples_count
         }
+        @summary_received = true
       rescue StandardError => e
         record_error(e)
       end
@@ -184,12 +192,35 @@ module RSpec
 
       def compare_and_record(current)
         return unless config.track_history
+        return unless complete_run?
 
         history = History.new(config)
         current.comparison = history.compare(current, run_id: current.run_id)
         history.record(current, run_id: current.run_id)
       rescue StandardError => e
         record_error(e)
+      end
+
+      # A summary alone is not proof that the suite finished: RSpec emits one
+      # after fail-fast and some abort paths too. A comparable run must have
+      # reached the summary, executed every selected example, not been narrowed
+      # to locations/descriptions/example IDs, and had no errors outside
+      # examples.
+      def complete_run?
+        return false unless @summary_received && @selected_count
+        return false unless outside_example_count.zero?
+        return false unless @executed_count == @selected_count
+        return false unless @summary[:example_count] == @executed_count
+
+        !targeted_run?
+      end
+
+      def targeted_run?
+        rules = ::RSpec.configuration.inclusion_filter.rules
+        rule_names = rules.keys.map(&:to_s)
+        (rule_names & %w[ids locations full_description]).any?
+      rescue StandardError
+        false
       end
 
       def start_progress(total)
@@ -222,6 +253,12 @@ module RSpec
       def print_summary(result, current)
         return unless config.terminal_summary
 
+        if config.track_history && !complete_run? && !current.reportable? && !result.summary_path
+          @output.puts
+          print_comparison(current)
+          return
+        end
+
         if quiet_success?(result)
           @output.puts
           print_rspec_summary(current)
@@ -248,6 +285,11 @@ module RSpec
       end
 
       def print_comparison(current)
+        if config.track_history && !complete_run?
+          @output.puts "Since last run: comparison skipped (run incomplete)"
+          return
+        end
+
         headline = current.comparison&.headline
         @output.puts "Since last run: #{headline}" if headline
       end

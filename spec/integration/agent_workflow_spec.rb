@@ -99,6 +99,14 @@ RSpec.describe "the agent workflow", :integration do
       expect(run.stdout).not_to include("Since last run")
     end
 
+    it "compares two complete red runs" do
+      project.run_signal
+
+      run = project.run_signal
+
+      expect(run.stdout).to include("Since last run: Signatures: 2 persistent; failures: 2 -> 2")
+    end
+
     it "reports what a fix resolved and what still fails" do
       project.run_signal
       project.write("lib/pricing.rb", <<~RUBY)
@@ -160,6 +168,61 @@ RSpec.describe "the agent workflow", :integration do
       project.run_signal
 
       expect(project.artifact?("history.json")).to be(false)
+    end
+
+    it "keeps the complete baseline when a later spec file will not load" do
+      project.run_signal
+      baseline = project.read("history.json")
+      original = File.read(File.join(project.root, "spec/pricing_spec.rb"))
+      project.write("spec/pricing_spec.rb", %(require "definitely_not_a_real_gem"\n))
+
+      incomplete = project.run_signal
+
+      expect(incomplete.stdout).to include("comparison skipped (run incomplete)")
+      expect(incomplete.stdout).not_to include("resolved", "new")
+      expect(project.read("history.json")).to eq(baseline)
+
+      project.write("spec/pricing_spec.rb", original.sub("it(\"prices weekly\")", "xit(\"prices weekly\")"))
+      complete = project.run_signal
+
+      expect(complete.stdout).to include("1 resolved, 1 persistent")
+      expect(JSON.parse(project.read("history.json")).fetch("runs").size).to eq(2)
+    end
+
+    it "does not compare or record a before-suite failure" do
+      project.run_signal
+      baseline = project.read("history.json")
+      project.write("spec/before_suite_spec.rb", <<~RUBY)
+        RSpec.configure { |config| config.before(:suite) { raise "suite setup broke" } }
+      RUBY
+
+      run = project.run_signal
+
+      expect(run.stdout).to include("comparison skipped (run incomplete)")
+      expect(run.stdout).not_to include("resolved", "new")
+      expect(project.read("history.json")).to eq(baseline)
+    end
+
+    it "does not compare or record a fail-fast run" do
+      project.run_signal
+      baseline = project.read("history.json")
+
+      run = project.run_signal("--fail-fast")
+
+      expect(run.stdout).to include("comparison skipped (run incomplete)")
+      expect(run.stdout).not_to include("resolved", "new")
+      expect(project.read("history.json")).to eq(baseline)
+    end
+
+    it "does not compare or record an exact single-example rerun" do
+      project.run_signal
+      baseline = project.read("history.json")
+
+      run = project.run_signal(*project.first_rerun_arguments)
+
+      expect(run.stdout).to include("comparison skipped (run incomplete)")
+      expect(run.stdout).not_to include("resolved", "new")
+      expect(project.read("history.json")).to eq(baseline)
     end
   end
 

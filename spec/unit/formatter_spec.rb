@@ -5,7 +5,9 @@ RSpec.describe RSpec::Signal::Formatter do
   let(:config) { signal_config }
   let(:formatter) { described_class.new(output) }
 
-  before { allow(formatter).to receive(:config).and_return(config) }
+  before do
+    allow(formatter).to receive(:config).and_return(config)
+  end
 
   after { FileUtils.rm_rf(config.output_path) }
 
@@ -35,7 +37,9 @@ RSpec.describe RSpec::Signal::Formatter do
   end
 
   def drive(*notifications, seed: 1234, seed_used: true)
+    formatter.start(start_notification(10))
     notifications.each { |notification| formatter.example_failed(notification) }
+    (10 - notifications.size).times { formatter.example_passed(nil) }
     formatter.dump_summary(summary_notification(failures: notifications.size))
     formatter.seed(instance_double(RSpec::Core::Notifications::SeedNotification,
                                    seed: seed, seed_used?: seed_used))
@@ -249,6 +253,22 @@ RSpec.describe RSpec::Signal::Formatter do
       formatter.dump_summary(summary_notification(failures: 0, errors: 2))
 
       expect(formatter.report.errors_outside_examples).to eq(2)
+    end
+  end
+
+  describe "history eligibility" do
+    it "records a run only after every selected example reaches a summary" do
+      drive(failure_notification)
+      baseline = File.read(File.join(config.output_path, "history.json"))
+      interrupted = described_class.new(output)
+      allow(interrupted).to receive(:config).and_return(config)
+      interrupted.start(start_notification(2))
+      interrupted.example_failed(failure_notification)
+
+      interrupted.close(nil)
+
+      expect(output.string).to include("comparison skipped (run incomplete)")
+      expect(File.read(File.join(config.output_path, "history.json"))).to eq(baseline)
     end
   end
 end

@@ -13,6 +13,8 @@ module RSpec
     # verbose failure renderer. When auto-installed it restores the default
     # formatter so requiring the gem does not change normal human output.
     class Formatter
+      include FormatterOutput
+
       ::RSpec::Core::Formatters.register self, :start, :example_passed, :example_failed,
                                          :example_pending, :message, :dump_summary, :seed, :close
 
@@ -26,6 +28,7 @@ module RSpec
         @outside = []
         @errors = []
         @summary = {}
+        @run_status = RunStatus.new
         @seed = nil
         @seed_used = false
         @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
@@ -40,15 +43,18 @@ module RSpec
         # installed itself, the user never asked for that, so put it back.
         RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
         writer.invalidate_current! if config.enabled? && !dry_run? && !ParallelRun.worker?
+        @run_status.selected(notification.count)
         start_progress(notification.count)
       end
 
       def example_passed(notification)
         count_example(notification, failed: false)
+        @run_status.example_executed
         advance_progress
       end
 
       def example_pending(_notification)
+        @run_status.example_executed
         advance_progress
       end
 
@@ -60,6 +66,7 @@ module RSpec
       rescue StandardError => e
         record_error(e)
       ensure
+        @run_status.example_executed
         advance_progress
       end
 
@@ -84,6 +91,7 @@ module RSpec
           duration: notification.duration,
           errors_outside_examples: notification.errors_outside_of_examples_count
         }
+        @run_status.summarized(notification.example_count)
       rescue StandardError => e
         record_error(e)
       end
@@ -184,12 +192,25 @@ module RSpec
 
       def compare_and_record(current)
         return unless config.track_history
+        return unless history_eligible_run?
 
         history = History.new(config)
         current.comparison = history.compare(current, run_id: current.run_id)
         history.record(current, run_id: current.run_id)
       rescue StandardError => e
         record_error(e)
+      end
+
+      def history_eligible_run?
+        @run_status.history_eligible?(outside_errors: outside_example_count, targeted: targeted_run?)
+      end
+
+      def targeted_run?
+        rules = ::RSpec.configuration.inclusion_filter.rules
+        rule_names = rules.keys.map(&:to_s)
+        (rule_names & %w[ids locations full_description]).any?
+      rescue StandardError
+        false
       end
 
       def start_progress(total)
@@ -214,84 +235,6 @@ module RSpec
 
       def writer
         @writer ||= Writer.new(config)
-      end
-
-      # Stdout is a tool call's return value, so it should be the triage view:
-      # enough to decide whether to open the report, whether the last edit
-      # helped, and where to look first.
-      def print_summary(result, current)
-        return unless config.terminal_summary
-
-        if quiet_success?(result)
-          @output.puts
-          print_rspec_summary(current)
-          print_comparison(current)
-          return
-        end
-        return unless current.reportable? || result.summary_path
-
-        @output.puts
-        print_rspec_summary(current) if RSpec::Signal.quiet_mode?
-        @output.puts signal_line(current)
-        current.relationship_lines.each { |line| @output.puts line }
-        print_comparison(current)
-        print_code_paths(current)
-        @output.puts "Report: #{writer.relative(result.summary_path)}" if result.summary_path
-      rescue StandardError => e
-        record_error(e)
-      end
-
-      def signal_line(current)
-        "rspec-signal: #{quantity(current.failure_count, "failure")} in " \
-          "#{quantity(current.group_count, "distinct signature")}" \
-          "#{cluster_note(current)}#{outside_note(current)}#{omission_note(current)}"
-      end
-
-      def print_comparison(current)
-        headline = current.comparison&.headline
-        @output.puts "Since last run: #{headline}" if headline
-      end
-
-      def print_code_paths(current)
-        top = current.code_paths.first(MAX_TOP_CODE_PATHS)
-        return if top.empty?
-
-        rendered = top.map { |path| "#{path.location} (#{quantity(path.signature_count, "signature")})" }
-        @output.puts "Shared code paths: #{rendered.join(", ")}"
-      end
-
-      def print_rspec_summary(current)
-        @output.puts "#{current.example_count} examples, #{current.failure_count} failures, " \
-                     "#{current.pending_count} pending"
-        @output.puts
-      end
-
-      def quiet_success?(result)
-        RSpec::Signal.quiet_mode? && result.summary_path.nil?
-      end
-
-      def quantity(count, word)
-        "#{count} #{count == 1 ? word : "#{word}s"}"
-      end
-
-      def cluster_note(current)
-        return "" unless current.cluster_count.positive?
-
-        ", #{quantity(current.cluster_count, "related cluster")}"
-      end
-
-      # "0 failures" beside a report link is a misleading pair when a spec file
-      # would not even load.
-      def outside_note(current)
-        return "" unless current.errors_outside_examples.positive?
-
-        ", #{quantity(current.errors_outside_examples, "error")} outside examples"
-      end
-
-      def omission_note(current)
-        return "" unless current.omitted_frames.positive?
-
-        " (#{current.omitted_frames} backtrace frames omitted)"
       end
 
       def record_error(error)

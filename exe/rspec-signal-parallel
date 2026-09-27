@@ -24,6 +24,11 @@ ENV["PARALLEL_TEST_FIRST_IS_1"] = "true"
 signal_options = "--require rspec/signal --format RSpec::Signal::Formatter"
 ENV["SPEC_OPTS"] = [ENV.fetch("SPEC_OPTS", nil), signal_options].compact.join(" ")
 
+unless ARGV.include?("--dry-run") || %w[1 true yes on].include?(ENV.fetch("RSPEC_SIGNAL_DISABLE", "").downcase)
+  require "rspec/signal"
+  RSpec::Signal::Writer.new(RSpec::Signal.configuration).invalidate_current!
+end
+
 system(Gem.ruby, parallel_rspec, *ARGV)
 test_status = $CHILD_STATUS.exitstatus || 1
 

@@ -39,6 +39,7 @@ module RSpec
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
         RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
+        writer.invalidate_current! if config.enabled? && !dry_run? && !ParallelRun.worker?
         start_progress(notification.count)
       end
 

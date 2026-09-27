@@ -265,6 +265,18 @@ RSpec.describe "a real rspec run", :integration do
 
       expect(File.read(File.join(project.root, "tmp/rspec-signal/.gitignore"))).to include("*")
     end
+
+    it "invalidates a successful run before a wrapper boot failure" do
+      project.write("spec/broken_spec.rb", 'RSpec.describe("x") { it("fails") { expect(1).to eq(2) } }')
+      project.run_signal
+      expect(project).to be_artifact("signal.md")
+
+      run = project.run_signal("--require", "./missing_helper.rb")
+
+      expect(run.status).not_to eq(0)
+      expect(project).not_to be_artifact("signal.md")
+      expect(project).not_to be_artifact("signal.json")
+    end
   end
 
   describe "opting out" do

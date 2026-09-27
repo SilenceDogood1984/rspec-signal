@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "tempfile"
 
 module RSpec
   module Signal
@@ -31,12 +32,16 @@ module RSpec
         FileUtils.mkdir_p(dir)
         write_gitignore
 
-        markdown = Reporters::Markdown.new(report, @config).render
-        written = [write_file(SIGNAL, markdown)]
-        written.concat(optional_artifacts(report))
+        rendered = render_artifacts(report)
+        publish(rendered)
+      end
 
-        stale = MANAGED - written.map { |path| File.basename(path) }
-        Result.new(summary_path: File.join(dir, SIGNAL), written: written, cleaned: remove(stale))
+      # Invalidating is deliberately separate from rendering. Callers do this
+      # at the beginning of a run, so an abort before #write cannot make the
+      # preceding run look current. History uses different names and is never
+      # included in MANAGED.
+      def invalidate_current!
+        remove(MANAGED)
       end
 
       # Relative to the project root when possible, because that is what you
@@ -48,15 +53,53 @@ module RSpec
 
       private
 
-      def optional_artifacts(report)
-        written = []
-        written << write_file(JSON, Reporters::JsonReport.new(report, @config).render) if @config.write_json
-        written << write_file(FULL, Reporters::FullOutput.new(report, @config).render) if @config.write_full
-        written
+      def render_artifacts(report)
+        artifacts = { SIGNAL => Reporters::Markdown.new(report, @config).render }
+        artifacts[JSON] = Reporters::JsonReport.new(report, @config).render if @config.write_json
+        artifacts[FULL] = Reporters::FullOutput.new(report, @config).render if @config.write_full
+        artifacts
+      end
+
+      # signal.md is the publication marker. Supporting artifacts are moved
+      # first and the marker last, so its presence always identifies a fully
+      # published generation. All content is staged beside its destination so
+      # rename remains on the same filesystem.
+      def publish(rendered)
+        staged = stage(rendered)
+        cleaned = invalidate_current!
+        published = []
+        publication_order(rendered.keys).each do |name|
+          File.rename(staged.fetch(name).path, File.join(dir, name))
+          published << File.join(dir, name)
+        end
+        Result.new(summary_path: File.join(dir, SIGNAL), written: published, cleaned: cleaned)
+      ensure
+        staged&.each_value(&:close!)
+      end
+
+      def stage(rendered)
+        staged = {}
+        rendered.each do |name, contents|
+          temporary = Tempfile.new([".#{name}", ".tmp"], dir)
+          temporary.binmode
+          temporary.write(contents)
+          temporary.flush
+          temporary.fsync
+          staged[name] = temporary
+        end
+        staged
+      rescue StandardError
+        temporary&.close!
+        staged&.each_value(&:close!)
+        raise
+      end
+
+      def publication_order(names)
+        names.reject { |name| name == SIGNAL } + [SIGNAL]
       end
 
       def clean
-        Result.new(summary_path: nil, written: [], cleaned: remove(MANAGED))
+        Result.new(summary_path: nil, written: [], cleaned: invalidate_current!)
       end
 
       def remove(names)
@@ -67,12 +110,6 @@ module RSpec
           File.delete(path)
           path
         end
-      end
-
-      def write_file(name, contents)
-        path = File.join(dir, name)
-        File.write(path, contents)
-        path
       end
 
       # Failure artifacts routinely contain application data. Keeping them out of

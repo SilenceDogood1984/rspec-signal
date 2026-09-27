@@ -1,0 +1,248 @@
+{
+  "schema": 2,
+  "generated_by": "rspec-signal 0.2.0",
+  "summary": {
+    "examples": 21,
+    "failures": 8,
+    "pending": 0,
+    "signatures": 5
+  },
+  "since_last_run": {
+    "previous_failures": 9,
+    "resolved": [
+      {
+        "signature": "3711d1493237",
+        "exception": "RSpec::Expectations::ExpectationNotMetError",
+        "examples": 1
+      }
+    ],
+    "new": [],
+    "persistent": [
+      {
+        "signature": "dfa28d6c9874",
+        "exception": "FakeBot::RecordInvalid",
+        "examples": 3
+      },
+      {
+        "signature": "7998e4e1a8cd",
+        "exception": "RuntimeError",
+        "examples": 2
+      },
+      {
+        "signature": "36c9df65d602",
+        "exception": "NameError",
+        "examples": 1
+      },
+      {
+        "signature": "ba0f49392f05",
+        "exception": "KeyError",
+        "examples": 1
+      },
+      {
+        "signature": "c6ba2d59355c",
+        "exception": "KeyError",
+        "examples": 1
+      }
+    ],
+    "changed": []
+  },
+  "signatures": [
+    {
+      "signature": "dfa28d6c9874",
+      "loose_signature": "b67d1e452305",
+      "count": 3,
+      "exception": "FakeBot::RecordInvalid",
+      "summary": "Validation failed: Organization must exist",
+      "culprit": "vendor/gems/fakebot-6.4.0/lib/fakebot.rb:4",
+      "rerun": "bundle exec rspec './spec/users_spec.rb[1:1]'",
+      "rerun_ids": [
+        "./spec/users_spec.rb[1:1]",
+        "./spec/users_spec.rb[1:2]",
+        "./spec/users_spec.rb[1:3]"
+      ],
+      "representative": {
+        "description": "Users has a name",
+        "location": "spec/users_spec.rb:5",
+        "rerun": "spec/users_spec.rb:5",
+        "id": "./spec/users_spec.rb[1:1]",
+        "exception": "FakeBot::RecordInvalid",
+        "message": [
+          "Failure/Error: let(:user) { FakeBot.create(:user) }",
+          "",
+          "FakeBot::RecordInvalid:",
+          "  Validation failed: Organization must exist"
+        ],
+        "symptom": {
+          "kind": "validation",
+          "key": "validation:organization must exist",
+          "label": "validation failure `Organization must exist`",
+          "detail": "Organization must exist"
+        }
+      },
+      "affected": [
+        {
+          "location": "spec/users_spec.rb:5",
+          "id": "./spec/users_spec.rb[1:1]",
+          "description": "Users has a name"
+        },
+        {
+          "location": "spec/users_spec.rb:6",
+          "id": "./spec/users_spec.rb[1:2]",
+          "description": "Users signs in"
+        },
+        {
+          "location": "spec/users_spec.rb:7",
+          "id": "./spec/users_spec.rb[1:3]",
+          "description": "Users joins a team"
+        }
+      ]
+    },
+    {
+      "signature": "7998e4e1a8cd",
+      "loose_signature": "b11e4716565d",
+      "count": 2,
+      "exception": "RuntimeError",
+      "summary": "session store is not configured",
+      "culprit": "lib/session.rb:3",
+      "app_context": "lib/session.rb:3",
+      "rerun": "bundle exec rspec './spec/admin_spec.rb[1:1]'",
+      "rerun_ids": [
+        "./spec/admin_spec.rb[1:1]",
+        "./spec/admin_spec.rb[1:2]"
+      ],
+      "representative": {
+        "description": "Admin lists",
+        "location": "spec/admin_spec.rb:4",
+        "rerun": "spec/admin_spec.rb:4",
+        "id": "./spec/admin_spec.rb[1:1]",
+        "exception": "RuntimeError",
+        "message": [
+          "Failure/Error: raise \"session store is not configured\"",
+          "",
+          "RuntimeError:",
+          "  session store is not configured"
+        ]
+      },
+      "affected": [
+        {
+          "location": "spec/admin_spec.rb:4",
+          "id": "./spec/admin_spec.rb[1:1]",
+          "description": "Admin lists"
+        },
+        {
+          "location": "spec/admin_spec.rb:5",
+          "id": "./spec/admin_spec.rb[1:2]",
+          "description": "Admin exports"
+        }
+      ]
+    },
+    {
+      "signature": "36c9df65d602",
+      "loose_signature": "fb82ae162a1c",
+      "count": 1,
+      "exception": "NameError",
+      "summary": "uninitialized constant Billing::TaxRate",
+      "culprit": "lib/billing.rb:3",
+      "app_context": "lib/billing.rb:3",
+      "rerun": "bundle exec rspec './spec/billing_spec.rb[1:1]'",
+      "rerun_ids": [
+        "./spec/billing_spec.rb[1:1]"
+      ],
+      "representative": {
+        "description": "Billing has a rate",
+        "location": "spec/billing_spec.rb:3",
+        "rerun": "spec/billing_spec.rb:3",
+        "id": "./spec/billing_spec.rb[1:1]",
+        "exception": "NameError",
+        "message": [
+          "Failure/Error: TaxRate.rate",
+          "",
+          "NameError:",
+          "  uninitialized constant Billing::TaxRate"
+        ],
+        "symptom": {
+          "kind": "missing_constant",
+          "key": "missing-constant:Billing::TaxRate",
+          "label": "uninitialized constant `Billing::TaxRate`",
+          "detail": "uninitialized Billing::TaxRate"
+        }
+      },
+      "affected": [
+        {
+          "location": "spec/billing_spec.rb:3",
+          "id": "./spec/billing_spec.rb[1:1]",
+          "description": "Billing has a rate"
+        }
+      ]
+    },
+    {
+      "signature": "ba0f49392f05",
+      "loose_signature": "c1d90f76aa77",
+      "count": 1,
+      "exception": "KeyError",
+      "summary": "key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\"",
+      "culprit": "lib/payments.rb:3",
+      "app_context": "lib/payments.rb:3",
+      "rerun": "bundle exec rspec './spec/keys_spec.rb[1:1]'",
+      "rerun_ids": [
+        "./spec/keys_spec.rb[1:1]"
+      ],
+      "representative": {
+        "description": "Keys charges",
+        "location": "spec/keys_spec.rb:4",
+        "rerun": "spec/keys_spec.rb:4",
+        "id": "./spec/keys_spec.rb[1:1]",
+        "exception": "KeyError",
+        "message": [
+          "Failure/Error: ENV.fetch(\"RSPEC_SIGNAL_DISABLED_MODE_KEY\")",
+          "",
+          "KeyError:",
+          "  key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\""
+        ]
+      },
+      "affected": [
+        {
+          "location": "spec/keys_spec.rb:4",
+          "id": "./spec/keys_spec.rb[1:1]",
+          "description": "Keys charges"
+        }
+      ]
+    },
+    {
+      "signature": "c6ba2d59355c",
+      "loose_signature": "c1d90f76aa77",
+      "count": 1,
+      "exception": "KeyError",
+      "summary": "key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\"",
+      "culprit": "lib/webhooks.rb:3",
+      "app_context": "lib/webhooks.rb:3",
+      "rerun": "bundle exec rspec './spec/keys_spec.rb[1:2]'",
+      "rerun_ids": [
+        "./spec/keys_spec.rb[1:2]"
+      ],
+      "representative": {
+        "description": "Keys verifies",
+        "location": "spec/keys_spec.rb:5",
+        "rerun": "spec/keys_spec.rb:5",
+        "id": "./spec/keys_spec.rb[1:2]",
+        "exception": "KeyError",
+        "message": [
+          "Failure/Error: ENV.fetch(\"RSPEC_SIGNAL_DISABLED_MODE_KEY\")",
+          "",
+          "KeyError:",
+          "  key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\""
+        ]
+      },
+      "affected": [
+        {
+          "location": "spec/keys_spec.rb:5",
+          "id": "./spec/keys_spec.rb[1:2]",
+          "description": "Keys verifies"
+        }
+      ]
+    }
+  ],
+  "related": [],
+  "code_paths": [],
+  "outside_examples": []
+}

@@ -50,12 +50,6 @@ module RSpec
       # run it has classified. No weights, no similarity, no model: every
       # relationship is an equality between facts read from the run.
       class Analysis
-        # The only thresholds in the analysis, and all of them are about scope.
-        MIN_SCOPE_FAILURES = 3
-        SCOPE_INSIDE = Rational(2, 3)   # at least this share of the scope failed
-        SCOPE_OUTSIDE = Rational(1, 20) # and less than this share of the rest did
-        SCOPE_DIMENSIONS = %w[file type].freeze
-
         # The three structural relations, in the order their evidence is shown.
         LINKS = { identities: "shared_exception_object", link_key: "same_underlying_exception",
                   entities: "missing_entity" }.freeze
@@ -86,7 +80,7 @@ module RSpec
           @expected = expected
           @hints = []
           causal, residual = relate
-          scoped, independent = scope(residual)
+          scoped, independent = ScopeAnalysis.call(residual, @census)
           @relations = causal + scoped + independent.map { |unit| Relation.new(kind: :independent, units: [unit]) }
           @hints.concat(same_origin_hints)
           @hints.concat(reused_instance_hints)
@@ -265,56 +259,6 @@ module RSpec
           a = find(parent, first)
           b = find(parent, second)
           parent[[a, b].max] = [a, b].min unless a == b
-        end
-
-        # ---- scope -------------------------------------------------------
-
-        # Concentration is evidence about *where*, not *why*. It groups only
-        # units that nothing structural related, and it never carries a
-        # confidence: "9 of 11 examples in this file failed" is exactly what it
-        # claims.
-        def scope(residual)
-          scoped = []
-          return [scoped, residual] if @census.nil? || @census.empty?
-
-          loop do
-            best = scope_candidates(residual).min_by { |candidate| candidate.values_at(:run, :order, :value) }
-            break unless best
-
-            scoped << Relation.new(kind: :scope, units: best[:units], scope: best[:stats])
-            residual -= best[:units]
-          end
-          [scoped, residual]
-        end
-
-        def scope_candidates(residual)
-          examples = residual.reject(&:outside)
-          SCOPE_DIMENSIONS.each_with_index.flat_map do |dimension, order|
-            @census.values(dimension).filter_map do |value|
-              inside = examples.select { |unit| within?(unit, dimension, value) }
-              stats = concentration(dimension, value)
-              next unless stats && inside.size >= 2 && inside.sum(&:size) >= MIN_SCOPE_FAILURES
-
-              { units: inside, stats: stats, run: stats["examples"], order: order, value: value }
-            end
-          end
-        end
-
-        def within?(unit, dimension, value)
-          evidence = unit.evidence
-          evidence.size == unit.size && evidence.all? { |item| item.public_send(dimension).to_s == value }
-        end
-
-        def concentration(dimension, value)
-          run, failed = @census.count(dimension, value)
-          elsewhere_run = @census.total - run
-          elsewhere_failed = @census.failed - failed
-          return nil if run.zero? || elsewhere_run < run
-          return nil if Rational(failed, run) < SCOPE_INSIDE
-          return nil unless Rational(elsewhere_failed, elsewhere_run) < SCOPE_OUTSIDE
-
-          { "dimension" => dimension, "value" => value, "failed" => failed, "examples" => run,
-            "failed_elsewhere" => elsewhere_failed, "examples_elsewhere" => elsewhere_run }
         end
 
         # ---- hints -------------------------------------------------------

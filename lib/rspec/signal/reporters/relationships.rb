@@ -15,9 +15,14 @@ module RSpec
         MAX_TERMINAL_GROUPS = 3
         MAX_MARKDOWN_GROUPS = 8
 
-        LEGEND = "CAUSAL: every member shares one exception object, one underlying exception at one line, " \
-                 "one missing definition, or one failing setup step. SCOPE: failures concentrated in one place; " \
-                 "a fact about where, not why. INDEPENDENT: no relationship found, which is not the same as unrelated."
+        HEADING = "Relationships between signatures (experimental):"
+
+        LEGEND = "Relationships between the signatures below, from structural evidence only. " \
+                 "CAUSAL: every member shares one exception object, one underlying exception at one line, " \
+                 "one missing definition, or one failing setup step -- a shared origin, not a named root cause. " \
+                 "SCOPE: failures concentrated in one place; a fact about where, not why. " \
+                 "INDEPENDENT: no relationship found, which is not the same as unrelated. " \
+                 "Every failure is classified into exactly one group; that is bookkeeping, not a diagnosis."
 
         # @param analysis [Causal::Analysis]
         # @param signature_positions [Hash{String => Integer}] digest => section number
@@ -31,7 +36,7 @@ module RSpec
           return [] unless @analysis.informative?
 
           shown = related.first(MAX_TERMINAL_GROUPS)
-          lines = shown.flat_map do |relation|
+          lines = [HEADING] + shown.flat_map do |relation|
             [header(relation), *describe(relation).first(2).map do |line|
               "  #{line}"
             end]
@@ -53,8 +58,8 @@ module RSpec
 
         def to_h
           {
-            "status" => "experimental",
-            "accounted" => accounted_h,
+            "experimental" => true,
+            "classified" => classified_h,
             "groups" => @analysis.relations.each_with_index.map { |relation, index| relation_h(relation, index + 1) },
             "hints" => @analysis.hints
           }
@@ -82,8 +87,10 @@ module RSpec
             "(no relationship found)"
         end
 
+        # Every failure is in exactly one group. This counts that bookkeeping;
+        # it says nothing about how many root causes there are.
         def accounting_line
-          line = "#{@analysis.accounted}/#{@analysis.expected} failures accounted for: " \
+          line = "#{@analysis.accounted}/#{@analysis.expected} failures classified: " \
                  "#{@analysis.count(:causal)} causal, #{@analysis.count(:scope)} scope, " \
                  "#{independent_failures} independent"
           missing = @analysis.not_captured
@@ -118,7 +125,7 @@ module RSpec
           case item["kind"]
           when "env" then "missing ENV key #{item["name"]} (KeyError raised by ENV itself)"
           when "const" then "missing constant #{item["name"]} (NameError#name)"
-          when "method" then "missing method #{item["name"]} (NoMethodError on a class defined in this project)"
+          when "method" then "method #{item["name"]} not callable (NoMethodError on a class defined in this project)"
           end
         end
 
@@ -164,7 +171,7 @@ module RSpec
           Rerun.command([relation.units.first.representative.rerun_argument])
         end
 
-        def accounted_h
+        def classified_h
           { "failures" => @analysis.accounted, "expected" => @analysis.expected,
             "causal" => @analysis.count(:causal), "scope" => @analysis.count(:scope),
             "independent" => independent_failures, "not_captured" => @analysis.not_captured }

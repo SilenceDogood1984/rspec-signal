@@ -54,10 +54,6 @@ module RSpec
         @analysis = nil
       end
 
-      def relationships(signature_positions = {})
-        analysis && Reporters::Relationships.new(analysis, signature_positions)
-      end
-
       # Empty when there is nothing beyond the signatures to say. Rendering is
       # as fail-soft as the analysis: a bug here must not cost the report.
       def relationship_lines
@@ -155,10 +151,15 @@ module RSpec
         end
         # The parent analyses the whole run from every worker's evidence and
         # census; a worker's own partial analysis would only mislead.
-        to_h(config, include_analysis: false).merge(schema: WORKER_SCHEMA, failures: serialized, census: census&.to_h)
+        payload = to_h(config, include_analysis: false).merge(schema: WORKER_SCHEMA, failures: serialized)
+        census ? payload.merge(census: census.to_h) : payload
       end
 
       private
+
+      def relationships(signature_positions = {})
+        analysis && Reporters::Relationships.new(analysis, signature_positions)
+      end
 
       def analysis_h
         relationships(signature_positions)&.to_h

@@ -14,7 +14,7 @@ require_relative "../support/sandbox_project"
 module CausalCorpus
   Outcome = Struct.new(:scenario, :stdout, :json, :keys, :labels, keyword_init: true) do
     def analysis
-      json.fetch("analysis", "groups" => [], "accounted" => {})
+      json.fetch("analysis", "groups" => [], "classified" => {})
     end
 
     def groups(kind)
@@ -147,7 +147,7 @@ module CausalCorpus
     singletons = outcome.keys.group_by { |key| outcome.label(key) }.values.select { |group| group.size == 1 }.flatten
     causal = outcome.groups("causal")
     impure = causal.reject { |group| group.map { |key| outcome.label(key) }.uniq.size == 1 }
-    accounted = outcome.analysis.fetch("accounted", {})
+    accounted = outcome.analysis.fetch("classified", {})
     {
       failures: outcome.keys.size,
       truth_pairs: truth.size,
@@ -176,8 +176,8 @@ module CausalCorpus
   # Terminal lines rspec-signal printed about relationships, for the report.
   def relationship_lines(outcome)
     lines = outcome.stdout.lines.map(&:rstrip)
-    first = lines.index { |line| line.start_with?("CAUSAL", "SCOPE") }
-    last = lines.index { |line| line.include?("failures accounted for") }
+    first = lines.index { |line| line.start_with?("Relationships between signatures") }
+    last = lines.index { |line| line.include?("failures classified") }
     first && last ? lines[first..last] : []
   end
 end

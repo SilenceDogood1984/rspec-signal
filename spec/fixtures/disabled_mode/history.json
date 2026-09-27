@@ -1,0 +1,80 @@
+[
+  {
+    "examples": 21,
+    "failures": 9,
+    "signatures": [
+      {
+        "digest": "dfa28d6c9874",
+        "loose": "b67d1e452305",
+        "exception": "FakeBot::RecordInvalid",
+        "count": 3
+      },
+      {
+        "digest": "7998e4e1a8cd",
+        "loose": "b11e4716565d",
+        "exception": "RuntimeError",
+        "count": 2
+      },
+      {
+        "digest": "36c9df65d602",
+        "loose": "fb82ae162a1c",
+        "exception": "NameError",
+        "count": 1
+      },
+      {
+        "digest": "ba0f49392f05",
+        "loose": "c1d90f76aa77",
+        "exception": "KeyError",
+        "count": 1
+      },
+      {
+        "digest": "c6ba2d59355c",
+        "loose": "c1d90f76aa77",
+        "exception": "KeyError",
+        "count": 1
+      },
+      {
+        "digest": "3711d1493237",
+        "loose": "d0ce8f71b164",
+        "exception": "RSpec::Expectations::ExpectationNotMetError",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "examples": 21,
+    "failures": 8,
+    "signatures": [
+      {
+        "digest": "dfa28d6c9874",
+        "loose": "b67d1e452305",
+        "exception": "FakeBot::RecordInvalid",
+        "count": 3
+      },
+      {
+        "digest": "7998e4e1a8cd",
+        "loose": "b11e4716565d",
+        "exception": "RuntimeError",
+        "count": 2
+      },
+      {
+        "digest": "36c9df65d602",
+        "loose": "fb82ae162a1c",
+        "exception": "NameError",
+        "count": 1
+      },
+      {
+        "digest": "ba0f49392f05",
+        "loose": "c1d90f76aa77",
+        "exception": "KeyError",
+        "count": 1
+      },
+      {
+        "digest": "c6ba2d59355c",
+        "loose": "c1d90f76aa77",
+        "exception": "KeyError",
+        "count": 1
+      }
+    ]
+  }
+]

@@ -28,9 +28,9 @@ module RSpec
       # many reach the Markdown report.
       attr_accessor :code_path_depth, :max_code_paths
 
-      # Experimental relationship analysis (causal / scope / independent groups).
-      # Off by default until it has been dogfooded on real suites, and until
-      # signature identity -- which it treats as authoritative -- is repaired.
+      # Experimental relationships between signatures (causal / scope /
+      # independent groups). Off by default while it is being dogfooded; its
+      # thresholds are internal constants, not configuration.
       # See docs/design/causal-failure-intelligence.md.
       attr_accessor :causal_analysis
 

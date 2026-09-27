@@ -338,7 +338,7 @@ to paste, and a directory of near-duplicate fragments is just more to sift throu
 | `related[]` | Symptom clusters |
 | `code_paths[]` | Lines of your code crossed by more than one signature |
 | `outside_examples[]` | Failures RSpec reported without an example |
-| `analysis` | Experimental: `groups[]` (`kind` causal / scope / independent, `confidence`, `evidence[]`, `members[]` with phase, origin and missing definitions, `verify` or `experiment`), `hints[]`, and `accounted` |
+| `analysis` | Only with `config.causal_analysis = true`. **Experimental and not covered by the schema:** see [Relationships](#relationships-experimental) |
 
 Only the representative carries a full trace. That is the size trade-off the whole
 gem is built on: the other members of a signature are, by definition, the same
@@ -628,27 +628,30 @@ order.
 
 ## Relationships (experimental)
 
-Signatures say which failures are *the same failure*. This layer says which signatures
-are related, and only by facts it can check. It is experimental and **off by default**;
-turn it on with `config.causal_analysis = true`. It builds on signatures, so it is only
-as good as they are. When it has nothing to add beyond the signatures, it prints nothing.
+**Off by default.** Turn it on with `config.causal_analysis = true`.
+
+Signatures say which failures are *the same failure*. This experimental layer relates
+**signatures to each other**, using only facts it can check, and prints nothing when it
+has nothing to add. It works between signatures as they are: it does not repair a
+signature that has wrongly split one failure in two, and it never names a root cause.
 
 ```text
-CAUSAL · HIGH · 5 failures in 1 signature
-  failed during setup (before hook at spec/support/auth.rb:3); example body never reached
-  raised at lib/session.rb:4
-CAUSAL · HIGH · 4 failures in 2 signatures
-  missing ENV key STRIPE_SECRET_KEY (KeyError raised by ENV itself)
-  raised at lib/payments.rb:3, lib/webhooks.rb:3
-INDEPENDENT · 4 failures in 4 signatures (no relationship found)
-13/13 failures accounted for: 9 causal, 0 scope, 4 independent
+Relationships between signatures (experimental):
+CAUSAL · HIGH · 6 failures in 4 signatures
+  missing constant Billing::TaxRate (NameError#name)
+  same underlying NameError at app/invoice.rb:8, also raised wrapped as InvoiceJob::Failed
+INDEPENDENT · 5 failures in 5 signatures (no relationship found)
+11/11 failures classified: 6 causal, 0 scope, 5 independent
 ```
 
 | Group | What it claims | Evidence it may use |
 |-------|----------------|---------------------|
-| **CAUSAL · HIGH** | These failures share an origin | one exception object RSpec handed to every example of a failed `before(:context)`; one underlying exception (same class, message and first-party line), bare or wrapped; one missing definition read from the exception itself -- an `ENV` key (`KeyError#receiver` is `ENV`), a constant (`NameError#name`), a method on a class defined in your project; one failing setup step (`before` hook, `let`, `after` hook); one error outside examples repeated across spec files |
-| **SCOPE** | Failures are concentrated here -- *where*, never *why* | `9/11 examples failed in spec/x_spec.rb; 0/529 elsewhere`: at least two otherwise-unlinked signatures, in one file or one `type:`, where at least two thirds failed and fewer than one in twenty elsewhere did. No confidence label |
+| **CAUSAL · HIGH** | These signatures share an origin | one exception object RSpec handed to every example of a failed `before(:context)`; one underlying exception (same class, message and first-party line), bare or wrapped; one missing definition read from the exception itself -- an `ENV` key (`KeyError#receiver` is `ENV`), a constant (`NameError#name`), a method on a class defined in your project; one failing setup step (`before` hook, `let`, `after` hook); one error outside examples repeated across spec files |
+| **SCOPE** | Failures are concentrated here -- *where*, never *why* | `9/11 examples failed in spec/x_spec.rb; 0/529 elsewhere`: at least two otherwise-unlinked signatures in one file or one `type:`, where at least two thirds failed and fewer than one in twenty elsewhere did. No confidence label |
 | **INDEPENDENT** | No relationship was found | Not "proven unrelated" |
+
+`n/n failures classified` means every failure was placed in exactly one of those groups.
+It is bookkeeping, not a count of root causes.
 
 What it knows that raw output does not show: which phase failed (read from the frames
 RSpec itself puts on the stack, before reduction discards them), whether examples ever
@@ -657,20 +660,25 @@ reached their bodies, which exception object they received, and how many example
 
 What it deliberately does not infer:
 
-- a cause from exception class, message similarity, file, timing or test order;
+- a relationship from exception class, message similarity, file, timing or test order;
 - anything from a method missing on `nil` or on a core class -- two nils are not one nil;
 - a shared object outside `before(:context)`: Ruby keeps the first backtrace when an
   exception instance is raised again, so a reused instance cannot prove anything;
 - concentration per parallel worker: `parallel_tests` assigns files to workers by size,
   so "every failure ran on worker 2" usually just means "every failing file did".
 
-Every failure is in exactly one group, and the last line says so. Weaker observations
-(one line raising several different messages; one exception instance reported by
-several examples) appear as `hints` in `signal.json` and never change the grouping.
+Weaker observations (one line raising several different messages; one exception instance
+reported by several examples) appear as `hints` in `signal.json` and never change the
+grouping.
 
-Evaluation: `bundle exec ruby spec/causal/evaluate.rb --verbose` runs 16 real `rspec`
-projects with known causes and scores this layer against the existing ones. See
-[the design](docs/design/causal-failure-intelligence.md) for the results and the reasoning.
+**`signal.json`:** when switched on, the report gains an `analysis` block marked
+`"experimental": true`. The rest of `signal.json` keeps its schema 2 contract. Fields
+inside `analysis` may change or disappear before the layer graduates. Do not build
+automation on them yet.
+
+Evaluation: `bundle exec ruby spec/causal/evaluate.rb --verbose` runs a corpus of real
+`rspec` projects with known causes, and scores this layer against the existing ones.
+See [the design notes](docs/design/causal-failure-intelligence.md).
 
 ## Large HTML responses
 

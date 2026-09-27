@@ -23,6 +23,7 @@ Layout/LineLength:
   # Corpus scenarios embed whole spec files and their ground truth verbatim.
   Exclude:
     - "spec/causal/scenarios.rb"
+    - "spec/causal/dogfood.rb"
 
 Naming/FileName:
   # The conventional `gem "rspec-signal"` entry point.

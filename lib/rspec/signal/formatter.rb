@@ -26,7 +26,6 @@ module RSpec
         @outside = []
         @errors = []
         @summary = {}
-        @census = Causal::Census.new
         @seed = nil
         @seed_used = false
         @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
@@ -44,7 +43,7 @@ module RSpec
       end
 
       def example_passed(notification)
-        @census.record(notification, failed: false) if config.causal_analysis
+        count_example(notification, failed: false)
         advance_progress
       end
 
@@ -55,7 +54,7 @@ module RSpec
       def example_failed(notification)
         return unless config.enabled?
 
-        @census.record(notification, failed: true) if config.causal_analysis
+        count_example(notification, failed: true)
         @failures << builder.call(notification, position: @failures.size + 1)
       rescue StandardError => e
         record_error(e)
@@ -136,6 +135,13 @@ module RSpec
       end
 
       private
+
+      # Only when relationships are switched on: disabled, nothing is counted
+      # and no census exists. Decided per example, because the formatter is
+      # built when the gem is required -- before the project's configure block.
+      def count_example(notification, failed:)
+        (@census ||= Causal::Census.new).record(notification, failed: failed) if config.causal_analysis
+      end
 
       # RSpec's own count is authoritative when it is at least as large as
       # ours; ours fills in when a run aborts before `dump_summary`.

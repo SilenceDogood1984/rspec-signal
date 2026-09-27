@@ -2,6 +2,7 @@
 
 require_relative "../causal/corpus"
 require_relative "../causal/scenarios"
+require_relative "../causal/dogfood"
 
 # The causal-analysis evaluation corpus as a test. Every scenario is a real
 # `rspec` run with known causes; see spec/causal/scenarios.rb, and
@@ -63,6 +64,23 @@ RSpec.describe "causal analysis corpus", :integration do
     end
   end
 
+  # Reproductions of failures seen while dogfooding, not written around the
+  # rules. Only the safety properties are asserted: what the analysis finds in
+  # them is reported in the design document, and silence is acceptable.
+  CausalDogfood.all.each do |scenario|
+    describe scenario[:name] do
+      let(:score) { CausalCorpus.score(CausalCorpus.cached(scenario)) }
+
+      it "never merges different causes, or an independent failure, into a causal group" do
+        expect(score.values_at(:impure_causal_groups, :merged_independents)).to eq([0, 0])
+      end
+
+      it "classifies every failure" do
+        expect(score[:accounted]).to be(true)
+      end
+    end
+  end
+
   describe "across the corpus" do
     let(:scores) do
       CausalScenarios.all.map do |scenario|
@@ -101,7 +119,7 @@ RSpec.describe "causal analysis corpus", :integration do
       shape = ->(outcome) { outcome.analysis.fetch("groups").map { |group| group.values_at("kind", "failures") }.sort }
 
       expect(shape.call(parallel)).to eq(shape.call(serial))
-      expect(parallel.analysis.fetch("accounted")).to eq(serial.analysis.fetch("accounted"))
+      expect(parallel.analysis.fetch("classified")).to eq(serial.analysis.fetch("classified"))
     end
   end
 end

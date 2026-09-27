@@ -23,7 +23,7 @@ RSpec.describe RSpec::Signal::Reporters::Relationships do
 
     expect(output.size).to be <= (3 * 3) + 3
     expect(output).to include("(2 more related groups in signal.json)")
-    expect(output.last).to eq("11/11 failures accounted for: 10 causal, 0 scope, 1 independent")
+    expect(output.last).to eq("11/11 failures classified: 10 causal, 0 scope, 1 independent")
   end
 
   it "names the missing definition and never the word cause" do
@@ -43,6 +43,15 @@ RSpec.describe RSpec::Signal::Reporters::Relationships do
         allow_any_instance_of(described_class) # rubocop:disable RSpec/AnyInstance
           .to receive(method).and_raise(NoMethodError, "boom")
       end
+    end
+
+    it "cannot cost the report its JSON, its Markdown or its terminal lines when the analysis raises" do
+      allow(RSpec::Signal::Causal::Analysis).to receive(:call).and_raise(NoMethodError, "analysis bug")
+
+      expect(report.analysis).to be_nil
+      expect(report.to_h).not_to include(:analysis)
+      expect(render_markdown(report)).to include("# RSpec Signal")
+      expect(report.relationship_lines).to eq([])
     end
 
     it "cannot cost the report its JSON, its Markdown or its terminal lines" do

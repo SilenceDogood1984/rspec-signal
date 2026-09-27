@@ -11,11 +11,12 @@ $LOAD_PATH.unshift(File.expand_path("../../lib", __dir__))
 require "rspec/core"
 require_relative "corpus"
 require_relative "scenarios"
+require_relative "dogfood"
 
 Encoding.default_external = Encoding::UTF_8
 verbose = ARGV.include?("--verbose")
 totals = Hash.new(0)
-rows = CausalScenarios.all.map do |scenario|
+rows = (CausalScenarios.all + CausalDogfood.all).map do |scenario|
   outcome = CausalCorpus.run(scenario)
   score = CausalCorpus.score(outcome)
   if verbose

@@ -11,9 +11,9 @@ RSpec.describe RSpec::Signal::TerminalSummary do
     lines = described_class.new(report, report_path: "tmp/rspec-signal/signal.md").lines
 
     expect(lines).to eq([
-      "Exact rerun: bundle exec rspec './spec/one_spec.rb[1:1]'",
-      "Report: tmp/rspec-signal/signal.md"
-    ])
+                          "Exact rerun: bundle exec rspec './spec/one_spec.rb[1:1]'",
+                          "Report: tmp/rspec-signal/signal.md"
+                        ])
     expect(lines.join("\n")).not_to include("1 distinct", "frames omitted", "expected 2")
   end
 
@@ -37,15 +37,15 @@ RSpec.describe RSpec::Signal::TerminalSummary do
     report = build_report([], example_count: 2, pending_count: 2)
 
     expect(described_class.new(report, quiet: true).lines).to eq([
-      "RSpec totals: 2 examples, 0 failures, 2 pending"
-    ])
+                                                                   "RSpec totals: 2 examples, 0 failures, 2 pending"
+                                                                 ])
   end
 
   it "labels independent failures without making causal claims" do
     report = build_report([
-      failure("first break", "spec/first_spec.rb"),
-      failure("second break", "spec/second_spec.rb")
-    ], failure_count: 2)
+                            failure("first break", "spec/first_spec.rb"),
+                            failure("second break", "spec/second_spec.rb")
+                          ], failure_count: 2)
     text = described_class.new(report, quiet: true).lines.join("\n")
 
     expect(text).to include("2 distinct problems", "Problem #1", "Problem #2")
@@ -72,7 +72,7 @@ RSpec.describe RSpec::Signal::TerminalSummary do
   it "keeps a parallel outside-example error and its action visible" do
     load_failure = failure("cannot load such file -- missing", "spec/broken_spec.rb")
     report = build_report([], failure_count: 0, errors_outside_examples: 1,
-                          outside_example_failures: [load_failure])
+                              outside_example_failures: [load_failure])
     text = described_class.new(report, quiet: true, workers: 2).lines.join("\n")
 
     expect(text).to include("Outside examples: 1 error", "Load problem: RuntimeError",
@@ -83,7 +83,7 @@ RSpec.describe RSpec::Signal::TerminalSummary do
   it "does not repeat an outside-example diagnostic in quiet serial output" do
     load_failure = failure("cannot load such file -- missing", "spec/broken_spec.rb")
     report = build_report([], failure_count: 0, errors_outside_examples: 1,
-                          outside_example_failures: [load_failure])
+                              outside_example_failures: [load_failure])
     text = described_class.new(report, quiet: true).lines.join("\n")
 
     expect(text).to include("Outside examples: 1 error", "Exact rerun: bundle exec rspec")
@@ -93,12 +93,12 @@ RSpec.describe RSpec::Signal::TerminalSummary do
   it "does not repeat an outside-example diagnostic after native RSpec rendered it" do
     load_failure = failure("cannot load such file -- missing", "spec/broken_spec.rb")
     report = build_report([], failure_count: 0, errors_outside_examples: 1,
-                          outside_example_failures: [load_failure])
+                              outside_example_failures: [load_failure])
     lines = described_class.new(report, report_path: "tmp/rspec-signal/signal.md").lines
 
     expect(lines).to eq([
-      "Exact rerun: bundle exec rspec './spec/broken_spec.rb[1:1]'",
-      "Report: tmp/rspec-signal/signal.md"
-    ])
+                          "Exact rerun: bundle exec rspec './spec/broken_spec.rb[1:1]'",
+                          "Report: tmp/rspec-signal/signal.md"
+                        ])
   end
 end

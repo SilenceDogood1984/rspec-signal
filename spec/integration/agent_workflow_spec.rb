@@ -178,8 +178,9 @@ RSpec.describe "the agent workflow", :integration do
 
       incomplete = project.run_signal
 
-      expect(incomplete.stdout).to include("comparison skipped (run incomplete)")
-      expect(incomplete.stdout).not_to include("resolved", "new")
+      expect(incomplete.stdout).to satisfy do |out|
+        out.include?("comparison skipped (run incomplete)") && !out.include?("resolved") && !out.include?("new")
+      end
       expect(project.read("history.json")).to eq(baseline)
 
       project.write("spec/pricing_spec.rb", original.sub("it(\"prices weekly\")", "xit(\"prices weekly\")"))
@@ -214,15 +215,21 @@ RSpec.describe "the agent workflow", :integration do
       expect(project.read("history.json")).to eq(baseline)
     end
 
-    it "does not compare or record an exact single-example rerun" do
+    it "records and compares a complete targeted rerun by its own selection scope" do
       project.run_signal
       baseline = project.read("history.json")
 
       run = project.run_signal(*project.first_rerun_arguments)
 
-      expect(run.stdout).to include("comparison skipped (targeted run)")
-      expect(run.stdout).not_to include("resolved", "new")
-      expect(project.read("history.json")).to eq(baseline)
+      expect(run.stdout).to satisfy do |out|
+        !out.include?("comparison skipped") && !out.include?("resolved") && !out.include?("new")
+      end
+      expect(project.read("history.json")).not_to eq(baseline)
+
+      repeat = project.run_signal(*project.first_rerun_arguments)
+
+      expect(repeat.stdout).to include("1 persistent")
+      expect(JSON.parse(project.read("history.json")).fetch("runs").size).to eq(3)
     end
   end
 

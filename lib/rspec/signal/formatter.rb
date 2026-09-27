@@ -237,7 +237,7 @@ module RSpec
 
         path = writer.relative(result.summary_path) if result.summary_path
         lines = TerminalSummary.new(current, report_path: path, quiet: RSpec::Signal.quiet_mode?,
-                                              comparison_skipped_reason: comparison_skipped_reason).lines
+                                             comparison_skipped_reason: comparison_skipped_reason).lines
         return if lines.empty?
 
         @output.puts

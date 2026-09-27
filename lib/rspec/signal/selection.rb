@@ -55,10 +55,13 @@ module RSpec
 
       def self.capture_argument(argument, following, paths, filters)
         return capture_filter(argument, following, filters) if FILTER_OPTIONS.key?(argument)
+
         equals_filter = FILTER_OPTIONS.keys.any? { |option| argument.start_with?("#{option}=") }
         return capture_equals_filter(argument, filters) if equals_filter
+
         short_filter = FILTER_OPTIONS.find { |option, _| option.length == 2 && argument.start_with?(option) }
         return capture_short_filter(argument, short_filter, filters) if short_filter
+
         if FILTER_FLAGS.include?(argument)
           filters["flag"] << argument
           return 0

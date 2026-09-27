@@ -52,10 +52,12 @@ RSpec.describe "parallel_tests support", :integration do
     expect(run.status).not_to eq(0)
     expect(run.output.bytesize).to be < 8_000
     expect(run.output).not_to include("parallel raw noise line 1000")
-    expect([run.output, project.read("signal.md")]).to match([
-      include("Top problem: ArgumentError: useful parallel diagnostic"),
-      include("useful parallel diagnostic")
-    ])
+    expect([run.output, project.read("signal.md")]).to match(
+      [
+        include("Top problem: ArgumentError: useful parallel diagnostic"),
+        include("useful parallel diagnostic")
+      ]
+    )
   end
 
   it "fails aggregation and warns when a worker artifact disappears" do
@@ -82,7 +84,7 @@ RSpec.describe "parallel_tests support", :integration do
 
     expect(run.status).not_to eq(0)
     expect(run.output).to include("parallel report aggregation failed", "JSON::ParserError")
-    expect(%w[signal.md signal.json]).to all(satisfy { |name| !project.artifact?(name) })
+    %w[signal.md signal.json].each { |name| expect(project.artifact?(name)).to be(false) }
   end
 
   it "merges full output in deterministic worker order when enabled" do

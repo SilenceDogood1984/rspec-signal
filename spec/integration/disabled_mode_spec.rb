@@ -15,8 +15,12 @@ module DisabledModeFixture
   BASELINE = File.expand_path("../fixtures/disabled_mode", __dir__)
 
   # Failures whose messages read the same on every Ruby and RSpec in CI: a
-  # hook, an ENV key at two call sites, a missing constant, one error raised
-  # inside a gem from three spec lines, and a plain assertion.
+  # hook, one error raised at two call sites, another from a lib method, one
+  # error raised inside a gem from three spec lines, and a plain assertion.
+  #
+  # Only custom exception classes: Ruby before 3.2 appends did_you_mean
+  # suggestions to KeyError, NameError and NoMethodError messages -- including
+  # a nearby ENV key -- so those would read differently across the CI matrix.
   FILES = {
     "vendor/gems/fakebot-6.4.0/lib/fakebot.rb" => <<~RUBY,
       module FakeBot
@@ -33,21 +37,33 @@ module DisabledModeFixture
         end
       end
     RUBY
+    "lib/credentials.rb" => <<~RUBY,
+      class MissingCredential < StandardError; end
+    RUBY
     "lib/payments.rb" => <<~RUBY,
+      require "credentials"
       module Payments
         def self.key
-          ENV.fetch("RSPEC_SIGNAL_DISABLED_MODE_KEY")
+          raise MissingCredential, "payment gateway key is not configured"
         end
       end
     RUBY
     "lib/webhooks.rb" => <<~RUBY,
+      require "credentials"
       module Webhooks
         def self.secret
-          ENV.fetch("RSPEC_SIGNAL_DISABLED_MODE_KEY")
+          raise MissingCredential, "payment gateway key is not configured"
         end
       end
     RUBY
-    "lib/billing.rb" => "module Billing\n  def self.rate\n    TaxRate.rate\n  end\nend\n",
+    "lib/billing.rb" => <<~RUBY,
+      module Billing
+        class RateUnavailable < StandardError; end
+        def self.rate
+          raise RateUnavailable, "no tax rate for region: eu-west"
+        end
+      end
+    RUBY
     "spec/admin_spec.rb" => <<~RUBY,
       require "session"
       RSpec.describe "Admin" do

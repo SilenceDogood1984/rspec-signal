@@ -29,18 +29,18 @@
         "examples": 2
       },
       {
-        "signature": "36c9df65d602",
-        "exception": "NameError",
+        "signature": "a75e84392d00",
+        "exception": "Billing::RateUnavailable",
         "examples": 1
       },
       {
-        "signature": "ba0f49392f05",
-        "exception": "KeyError",
+        "signature": "bb7bc97395c2",
+        "exception": "MissingCredential",
         "examples": 1
       },
       {
-        "signature": "c6ba2d59355c",
-        "exception": "KeyError",
+        "signature": "fb04244cb8e3",
+        "exception": "MissingCredential",
         "examples": 1
       }
     ],
@@ -137,13 +137,13 @@
       ]
     },
     {
-      "signature": "36c9df65d602",
-      "loose_signature": "fb82ae162a1c",
+      "signature": "a75e84392d00",
+      "loose_signature": "499735036f34",
       "count": 1,
-      "exception": "NameError",
-      "summary": "uninitialized constant Billing::TaxRate",
-      "culprit": "lib/billing.rb:3",
-      "app_context": "lib/billing.rb:3",
+      "exception": "Billing::RateUnavailable",
+      "summary": "no tax rate for region: eu-west",
+      "culprit": "lib/billing.rb:4",
+      "app_context": "lib/billing.rb:4",
       "rerun": "bundle exec rspec './spec/billing_spec.rb[1:1]'",
       "rerun_ids": [
         "./spec/billing_spec.rb[1:1]"
@@ -153,18 +153,18 @@
         "location": "spec/billing_spec.rb:3",
         "rerun": "spec/billing_spec.rb:3",
         "id": "./spec/billing_spec.rb[1:1]",
-        "exception": "NameError",
+        "exception": "Billing::RateUnavailable",
         "message": [
-          "Failure/Error: TaxRate.rate",
+          "Failure/Error: raise RateUnavailable, \"no tax rate for region: eu-west\"",
           "",
-          "NameError:",
-          "  uninitialized constant Billing::TaxRate"
+          "Billing::RateUnavailable:",
+          "  no tax rate for region: eu-west"
         ],
         "symptom": {
-          "kind": "missing_constant",
-          "key": "missing-constant:Billing::TaxRate",
-          "label": "uninitialized constant `Billing::TaxRate`",
-          "detail": "uninitialized Billing::TaxRate"
+          "kind": "exception_class",
+          "key": "exception:Billing::RateUnavailable",
+          "label": "`Billing::RateUnavailable` raised in several places",
+          "detail": "Billing::RateUnavailable"
         }
       },
       "affected": [
@@ -176,13 +176,13 @@
       ]
     },
     {
-      "signature": "ba0f49392f05",
-      "loose_signature": "c1d90f76aa77",
+      "signature": "bb7bc97395c2",
+      "loose_signature": "4b816293ae93",
       "count": 1,
-      "exception": "KeyError",
-      "summary": "key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\"",
-      "culprit": "lib/payments.rb:3",
-      "app_context": "lib/payments.rb:3",
+      "exception": "MissingCredential",
+      "summary": "payment gateway key is not configured",
+      "culprit": "lib/payments.rb:4",
+      "app_context": "lib/payments.rb:4",
       "rerun": "bundle exec rspec './spec/keys_spec.rb[1:1]'",
       "rerun_ids": [
         "./spec/keys_spec.rb[1:1]"
@@ -192,12 +192,12 @@
         "location": "spec/keys_spec.rb:4",
         "rerun": "spec/keys_spec.rb:4",
         "id": "./spec/keys_spec.rb[1:1]",
-        "exception": "KeyError",
+        "exception": "MissingCredential",
         "message": [
-          "Failure/Error: ENV.fetch(\"RSPEC_SIGNAL_DISABLED_MODE_KEY\")",
+          "Failure/Error: raise MissingCredential, \"payment gateway key is not configured\"",
           "",
-          "KeyError:",
-          "  key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\""
+          "MissingCredential:",
+          "  payment gateway key is not configured"
         ]
       },
       "affected": [
@@ -209,13 +209,13 @@
       ]
     },
     {
-      "signature": "c6ba2d59355c",
-      "loose_signature": "c1d90f76aa77",
+      "signature": "fb04244cb8e3",
+      "loose_signature": "4b816293ae93",
       "count": 1,
-      "exception": "KeyError",
-      "summary": "key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\"",
-      "culprit": "lib/webhooks.rb:3",
-      "app_context": "lib/webhooks.rb:3",
+      "exception": "MissingCredential",
+      "summary": "payment gateway key is not configured",
+      "culprit": "lib/webhooks.rb:4",
+      "app_context": "lib/webhooks.rb:4",
       "rerun": "bundle exec rspec './spec/keys_spec.rb[1:2]'",
       "rerun_ids": [
         "./spec/keys_spec.rb[1:2]"
@@ -225,12 +225,12 @@
         "location": "spec/keys_spec.rb:5",
         "rerun": "spec/keys_spec.rb:5",
         "id": "./spec/keys_spec.rb[1:2]",
-        "exception": "KeyError",
+        "exception": "MissingCredential",
         "message": [
-          "Failure/Error: ENV.fetch(\"RSPEC_SIGNAL_DISABLED_MODE_KEY\")",
+          "Failure/Error: raise MissingCredential, \"payment gateway key is not configured\"",
           "",
-          "KeyError:",
-          "  key not found: \"RSPEC_SIGNAL_DISABLED_MODE_KEY\""
+          "MissingCredential:",
+          "  payment gateway key is not configured"
         ]
       },
       "affected": [

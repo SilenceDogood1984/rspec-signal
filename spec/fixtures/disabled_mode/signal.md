@@ -14,9 +14,9 @@ Trace frames are innermost first. Project paths are relative to the repository r
 |--:|---------:|-----------|-----------|---------|
 | 1 | 3 | `FakeBot::RecordInvalid` | vendor/gems/fakebot-6.4.0/lib/fakebot.rb:4 | Validation failed: Organization must exist |
 | 2 | 2 | `RuntimeError` | lib/session.rb:3 | session store is not configured |
-| 3 | 1 | `NameError` | lib/billing.rb:3 | uninitialized constant Billing::TaxRate |
-| 4 | 1 | `KeyError` | lib/payments.rb:3 | key not found: "RSPEC_SIGNAL_DISABLED_MODE_KEY" |
-| 5 | 1 | `KeyError` | lib/webhooks.rb:3 | key not found: "RSPEC_SIGNAL_DISABLED_MODE_KEY" |
+| 3 | 1 | `Billing::RateUnavailable` | lib/billing.rb:4 | no tax rate for region: eu-west |
+| 4 | 1 | `MissingCredential` | lib/payments.rb:4 | payment gateway key is not configured |
+| 5 | 1 | `MissingCredential` | lib/webhooks.rb:4 | payment gateway key is not configured |
 
 ## 1. FakeBot::RecordInvalid -- 3 examples
 
@@ -81,19 +81,19 @@ bundle exec rspec './spec/admin_spec.rb[1:1]' './spec/admin_spec.rb[1:2]'
 spec/admin_spec.rb:5  Admin exports
 ```
 
-## 3. NameError
+## 3. Billing::RateUnavailable
 
 > Billing has a rate
 
 ```text
-Failure/Error: TaxRate.rate
+Failure/Error: raise RateUnavailable, "no tax rate for region: eu-west"
 
-NameError:
-  uninitialized constant Billing::TaxRate
+Billing::RateUnavailable:
+  no tax rate for region: eu-west
 ```
 
 - Example `spec/billing_spec.rb:3`
-- Your code `lib/billing.rb:3`
+- Your code `lib/billing.rb:4`
 
 **Trace**
 
@@ -105,19 +105,19 @@ NameError:
 bundle exec rspec './spec/billing_spec.rb[1:1]'
 ```
 
-## 4. KeyError
+## 4. MissingCredential
 
 > Keys charges
 
 ```text
-Failure/Error: ENV.fetch("RSPEC_SIGNAL_DISABLED_MODE_KEY")
+Failure/Error: raise MissingCredential, "payment gateway key is not configured"
 
-KeyError:
-  key not found: "RSPEC_SIGNAL_DISABLED_MODE_KEY"
+MissingCredential:
+  payment gateway key is not configured
 ```
 
 - Example `spec/keys_spec.rb:4`
-- Your code `lib/payments.rb:3`
+- Your code `lib/payments.rb:4`
 
 **Trace**
 
@@ -129,19 +129,19 @@ KeyError:
 bundle exec rspec './spec/keys_spec.rb[1:1]'
 ```
 
-## 5. KeyError
+## 5. MissingCredential
 
 > Keys verifies
 
 ```text
-Failure/Error: ENV.fetch("RSPEC_SIGNAL_DISABLED_MODE_KEY")
+Failure/Error: raise MissingCredential, "payment gateway key is not configured"
 
-KeyError:
-  key not found: "RSPEC_SIGNAL_DISABLED_MODE_KEY"
+MissingCredential:
+  payment gateway key is not configured
 ```
 
 - Example `spec/keys_spec.rb:5`
-- Your code `lib/webhooks.rb:3`
+- Your code `lib/webhooks.rb:4`
 
 **Trace**
 

@@ -16,21 +16,21 @@
         "count": 2
       },
       {
-        "digest": "36c9df65d602",
-        "loose": "fb82ae162a1c",
-        "exception": "NameError",
+        "digest": "a75e84392d00",
+        "loose": "499735036f34",
+        "exception": "Billing::RateUnavailable",
         "count": 1
       },
       {
-        "digest": "ba0f49392f05",
-        "loose": "c1d90f76aa77",
-        "exception": "KeyError",
+        "digest": "bb7bc97395c2",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
         "count": 1
       },
       {
-        "digest": "c6ba2d59355c",
-        "loose": "c1d90f76aa77",
-        "exception": "KeyError",
+        "digest": "fb04244cb8e3",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
         "count": 1
       },
       {
@@ -58,21 +58,21 @@
         "count": 2
       },
       {
-        "digest": "36c9df65d602",
-        "loose": "fb82ae162a1c",
-        "exception": "NameError",
+        "digest": "a75e84392d00",
+        "loose": "499735036f34",
+        "exception": "Billing::RateUnavailable",
         "count": 1
       },
       {
-        "digest": "ba0f49392f05",
-        "loose": "c1d90f76aa77",
-        "exception": "KeyError",
+        "digest": "bb7bc97395c2",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
         "count": 1
       },
       {
-        "digest": "c6ba2d59355c",
-        "loose": "c1d90f76aa77",
-        "exception": "KeyError",
+        "digest": "fb04244cb8e3",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
         "count": 1
       }
     ]

@@ -44,10 +44,10 @@ class SandboxProject
     RUBY
   end
 
-  def run(*args)
+  def run(*args, env: {})
     command = [RbConfig.ruby, Gem.bin_path("rspec-core", "rspec"),
                "--require", "./spec/spec_helper.rb", "--no-color", *args]
-    stdout, stderr, status = Open3.capture3({ "RSPEC_SIGNAL_DISABLE" => nil }, *command, chdir: root)
+    stdout, stderr, status = Open3.capture3({ "RSPEC_SIGNAL_DISABLE" => nil }.merge(env), *command, chdir: root)
     Run.new(stdout: stdout, stderr: stderr, status: status.exitstatus, project: self)
   end
 

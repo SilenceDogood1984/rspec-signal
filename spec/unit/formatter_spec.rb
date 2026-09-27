@@ -49,13 +49,14 @@ RSpec.describe RSpec::Signal::Formatter do
       expect(File).to exist(File.join(config.output_path, "signal.md"))
     end
 
-    it "prints a two-line terminal summary" do
-      expect(output.string).to include("rspec-signal: 2 failures in 2 distinct signatures")
-      expect(output.string).to include("Report:")
+    it "puts distinct problems and exact actions ahead of the report" do
+      expect(output.string).to include("Signal problems: 2 failures, 2 distinct problems")
+      expect(output.string).to include("Problem #1:", "Exact rerun: bundle exec rspec")
+      expect(output.string.index("Exact rerun:")).to be < output.string.index("Report:")
     end
 
-    it "reports the reduction it achieved" do
-      expect(output.string).to match(/\(\d+ backtrace frames omitted\)/)
+    it "keeps frame-count trivia out of the terminal" do
+      expect(output.string).not_to include("frames omitted")
     end
 
     it "carries the seed into the report" do

@@ -115,7 +115,7 @@ RSpec.describe "parallel_tests support", :integration do
     run = project.run_signal_parallel("-n", "2", "spec")
 
     expect(run.status).to eq(0)
-    expect(run.output).to include("2 examples, 0 failures across 2 workers")
+    expect(run.output).to include("RSpec totals: 2 examples, 0 failures, 0 pending across 2 workers")
     expect(project).not_to be_artifact("signal.md")
   end
 

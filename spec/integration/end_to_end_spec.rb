@@ -110,7 +110,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "adds its own two-line summary" do
-      expect(run.stdout).to include("rspec-signal: 2 failures in 2 distinct signatures")
+      expect(run.stdout).to include("Signal problems: 2 failures, 2 distinct problems")
       expect(run.stdout).to include("Report: tmp/rspec-signal/signal.md")
     end
 
@@ -175,7 +175,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "collapses the repeated root cause into one signature" do
-      expect(run.stdout).to include("rspec-signal: 3 failures in 1 distinct signature")
+      expect(run.stdout).to include("Signal problems: 3 failures, 1 distinct problem")
     end
 
     it "keeps every affected example" do
@@ -227,7 +227,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "reports one signature, not one per call site" do
-      expect(run.stdout).to include("rspec-signal: 4 failures in 1 distinct signature")
+      expect(run.stdout).to include("Signal problems: 4 failures, 1 distinct problem")
     end
 
     it "still shows the reader the first call site's source line" do
@@ -480,7 +480,7 @@ RSpec.describe "a real rspec run", :integration do
     end
 
     it "keeps them as separate signatures" do
-      expect(run.stdout).to include("2 failures in 2 distinct signatures")
+      expect(run.stdout).to include("2 failures, 2 distinct problems")
     end
 
     it "reports one related cluster on the terminal too" do
@@ -584,6 +584,27 @@ RSpec.describe "a real rspec run", :integration do
       expect(run.stdout).to include("20 examples, 20 failures")
       expect(signal_lines).to be < rspec_lines / 4
       expect(run.summary).to include("1 distinct signature")
+    end
+  end
+
+  describe "single-failure terminal budget" do
+    it "adds at most an exact rerun and report pointer to native RSpec" do
+      project.install_spec_helper
+      project.write("spec/one_failure_spec.rb", <<~RUBY)
+        RSpec.describe "one failure" do
+          it("fails") { expect(1).to eq(2) }
+        end
+      RUBY
+
+      native = project.run("spec/one_failure_spec.rb", env: { "RSPEC_SIGNAL_DISABLE" => "1" })
+      signal = project.run("spec/one_failure_spec.rb")
+      added_lines = signal.stdout.lines.size - native.stdout.lines.size
+      added_bytes = signal.stdout.bytesize - native.stdout.bytesize
+
+      expect(signal.stdout).to include("Exact rerun: bundle exec rspec", "Report: tmp/rspec-signal/signal.md")
+      expect(signal.stdout).not_to include("1 failure in 1 distinct", "frames omitted")
+      expect(added_lines).to be_between(2, 4)
+      expect(added_bytes).to be_between(1, 250)
     end
   end
 end

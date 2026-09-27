@@ -31,13 +31,12 @@ begin
   require "rspec/signal"
   result = RSpec::Signal::ParallelMerger.new(registry: registry).call
   report = result.report
+  writer = RSpec::Signal::Writer.new(RSpec::Signal.configuration)
+  path = writer.relative(result.write_result.summary_path) if result.write_result.summary_path
   puts
-  puts "#{report.example_count} examples, #{report.failure_count} failures across #{result.workers} workers"
-  puts "rspec-signal: #{report.group_count} exact signatures, #{report.cluster_count} related clusters, " \
-       "#{report.omitted_frames} backtrace frames omitted"
-  report.relationship_lines.each { |line| puts line }
-  if result.write_result.summary_path
-    puts "Report: #{RSpec::Signal::Writer.new(RSpec::Signal.configuration).relative(result.write_result.summary_path)}"
+  terminal = RSpec::Signal::TerminalSummary.new(report, report_path: path, quiet: true, workers: result.workers)
+  terminal.lines.each do |line|
+    puts line
   end
   if result.missing.any?
     warn "rspec-signal: warning: #{result.missing.size} worker artifacts were missing; report is incomplete"

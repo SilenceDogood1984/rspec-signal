@@ -77,27 +77,48 @@ module RSpec
           environment: payloads.first&.fetch("environment", {}) || {},
           errors_outside_examples: sum(summaries, "errors_outside_examples"),
           relate_failures: @config.relate_failures, code_path_depth: @config.code_path_depth,
-          outside_example_failures: load_outside(payloads), run_id: run_id
+          outside_example_failures: load_outside(payloads), run_id: run_id,
+          census: load_census(payloads), causal_analysis: @config.causal_analysis
         )
       end
 
       def load_outside(payloads)
-        payloads.flat_map { |payload| payload.fetch("outside_examples", []).map { |item| load_failure(item) } }
+        payloads.flat_map do |payload|
+          payload.fetch("outside_examples", []).map do |item|
+            load_failure(item).tap { |failure| failure.evidence ||= Causal::Evidence.new(phase: "outside") }
+          end
+        end
       end
 
       def load_failures(payloads)
         payloads.flat_map do |payload|
-          payload.fetch("failures", []).map { |failure| load_failure(failure) }
+          payload.fetch("failures", []).map { |failure| load_failure(failure, worker: payload["worker"]) }
         end
       end
 
-      def load_failure(data)
+      # Each worker counted only what it ran; the parent needs the whole run.
+      def load_census(payloads)
+        payloads.each_with_object(Causal::Census.new) { |payload, census| census.merge(payload["census"]) }
+      end
+
+      # Exception-object tokens are only unique within one process, so they are
+      # qualified by worker before two workers' tokens can meet.
+      def load_evidence(data, worker)
+        evidence = Causal::Evidence.from_h(data)
+        return nil unless evidence
+
+        evidence.identities = evidence.identities.map { |token| "w#{worker}:#{token}" }
+        evidence
+      end
+
+      def load_failure(data, worker: nil)
         entries = data.fetch("trace", []).map { |entry| load_entry(entry) }
         frames = entries.select(&:frame?)
         reduced = Backtrace::Reduced.new(entries: entries, total: frames.size + data.fetch("omitted_frames", 0),
                                          omitted: { serialized: data.fetch("omitted_frames", 0) })
         fingerprint = data["fingerprint"] || {}
-        Failure.new(**failure_attributes(data, reduced, frames), fingerprint: load_fingerprint(fingerprint))
+        Failure.new(**failure_attributes(data, reduced, frames), fingerprint: load_fingerprint(fingerprint),
+                                                                 evidence: load_evidence(data["evidence"], worker))
       end
 
       def failure_attributes(data, reduced, frames)

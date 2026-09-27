@@ -28,6 +28,34 @@ RSpec.describe RSpec::Signal::FailureBuilder do
     klass.new(message).tap { |e| e.set_backtrace(backtrace) }
   end
 
+  # The experimental relationship evidence is captured here, and it must never
+  # cost a failure its report -- nor be captured at all when switched off.
+  describe "relationship evidence" do
+    let(:failing) do
+      notification(exception: error(ArgumentError, "boom", Backtraces.pure_ruby),
+                   message_lines: ["Failure/Error: x", "", "ArgumentError:", "  boom"])
+    end
+
+    it "is not captured when relationships are off, which is the default" do
+      expect(builder.call(failing).evidence).to be_nil
+    end
+
+    it "is captured when switched on" do
+      config.causal_analysis = true
+
+      expect(builder.call(failing).evidence).to be_a(RSpec::Signal::Causal::Evidence)
+    end
+
+    it "leaves the failure intact when capture itself raises" do
+      config.causal_analysis = true
+      allow(RSpec::Signal::Causal::Capture).to receive(:call).and_raise(NoMethodError, "capture bug")
+
+      failure = builder.call(failing)
+
+      expect([failure.evidence, failure.exception_class, failure.message.summary]).to eq([nil, "ArgumentError", "boom"])
+    end
+  end
+
   describe "a normal failure" do
     subject(:failure) do
       builder.call(

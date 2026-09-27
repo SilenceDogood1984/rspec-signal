@@ -67,10 +67,19 @@ module RSpec
           reduced: config.reducer.call(frames),
           frames: frames,
           rerun: rerun_for(context, location),
-          raw: raw(config, text, position)
+          raw: raw(config, text, position),
+          evidence: evidence(frames)
         )
       rescue StandardError
         nil
+      end
+
+      # Only the phase and origin: the exception object itself never reaches
+      # a formatter, so none of its attributes can be read.
+      def evidence(frames)
+        origin = frames.find(&:project?)
+        Causal::Evidence.new(phase: "outside", body_reached: false, origin: origin&.location,
+                             origin_kind: origin && Causal::Capture.origin_kind(origin))
       end
 
       # The suggested rerun command RSpec prints after "Did you mean?" is

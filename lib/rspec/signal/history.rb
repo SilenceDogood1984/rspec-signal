@@ -23,7 +23,11 @@ module RSpec
     # behaviour of every run before this feature existed.
     class History
       FILE = "history.json"
-      SCHEMA = 1
+      # 2: signature digests no longer include RSpec's `Failure/Error:` source
+      # echo. Schema 1 digests are not comparable, so an older file is ignored
+      # -- one run with nothing to compare against -- rather than reporting
+      # every signature as resolved and new.
+      SCHEMA = 2
       MAX_RUNS = 10
 
       def initialize(config)

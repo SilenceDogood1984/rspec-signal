@@ -42,7 +42,8 @@ module RSpec
         start_progress(notification.count)
       end
 
-      def example_passed(_notification)
+      def example_passed(notification)
+        count_example(notification, failed: false)
         advance_progress
       end
 
@@ -53,6 +54,7 @@ module RSpec
       def example_failed(notification)
         return unless config.enabled?
 
+        count_example(notification, failed: true)
         @failures << builder.call(notification, position: @failures.size + 1)
       rescue StandardError => e
         record_error(e)
@@ -126,11 +128,20 @@ module RSpec
           outside_example_failures: @outside,
           relate_failures: config.relate_failures,
           code_path_depth: config.code_path_depth,
-          run_id: @run_id
+          run_id: @run_id,
+          census: @census,
+          causal_analysis: config.causal_analysis
         )
       end
 
       private
+
+      # Only when relationships are switched on: disabled, nothing is counted
+      # and no census exists. Decided per example, because the formatter is
+      # built when the gem is required -- before the project's configure block.
+      def count_example(notification, failed:)
+        (@census ||= Causal::Census.new).record(notification, failed: failed) if config.causal_analysis
+      end
 
       # RSpec's own count is authoritative when it is at least as large as
       # ours; ours fills in when a run aborts before `dump_summary`.
@@ -222,6 +233,7 @@ module RSpec
         @output.puts
         print_rspec_summary(current) if RSpec::Signal.quiet_mode?
         @output.puts signal_line(current)
+        current.relationship_lines.each { |line| @output.puts line }
         print_comparison(current)
         print_code_paths(current)
         @output.puts "Report: #{writer.relative(result.summary_path)}" if result.summary_path

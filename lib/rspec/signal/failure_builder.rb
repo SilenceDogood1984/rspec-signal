@@ -25,16 +25,18 @@ module RSpec
         exception = notification.exception
         extra = Array(example.metadata[:extra_failure_lines])
         frames = Backtrace::Parser.parse(backtrace_for(exception), @config.classifier)
+        message = message_for(notification, exception, extra)
 
         Failure.new(
           **identity(example),
           exception_class: exception_class_name(exception),
-          message: message_for(notification, exception, extra),
+          message: message,
           reduced: @config.reducer.call(frames),
           frames: frames,
           diagnostics: diagnostics(example, extra),
           shared_group_locations: shared_group_locations(example),
-          raw: raw_output(notification, position)
+          raw: raw_output(notification, position),
+          evidence: evidence_for(exception, frames, example)
         )
       end
 
@@ -47,6 +49,19 @@ module RSpec
           rerun: safe(example) { example.location_rerun_argument&.sub(%r{\A\./}, "") },
           example_id: safe(example) { example.id }
         }
+      end
+
+      # Read from the full backtrace, before reduction discards the runner
+      # frames that say which phase failed. Experimental, and never allowed to
+      # cost the report.
+      def evidence_for(exception, frames, example)
+        return nil unless @config.causal_analysis
+
+        primary = sub_exceptions(exception).first || exception
+        @identities ||= {}.compare_by_identity
+        Causal::Capture.call(primary, frames: frames, config: @config, identities: @identities, example: example)
+      rescue StandardError
+        nil
       end
 
       def message_for(notification, exception, extra)

@@ -95,15 +95,34 @@ module RSpec
       # the main text is truncated to `MAX_FINGERPRINT_CHARS`, so two
       # otherwise-identical wrapper messages with different causes never
       # collapse into one signature just because the wrapper is long.
+      #
+      # RSpec's `Failure/Error:` echo of the failing source line is left out.
+      # When the raise site is inside a gem it echoes each example's own call
+      # site, so one broken factory would become one signature per `create`
+      # line -- and the example's own location is deliberately not part of a
+      # failure's identity.
       def normalized
         @normalized ||= begin
-          main = truncate(normalize_for_fingerprint(@lines.join(" ")), MAX_FINGERPRINT_CHARS)
+          main = truncate(normalize_for_fingerprint(identity_lines.join(" ")), MAX_FINGERPRINT_CHARS)
           cause = normalize_for_fingerprint(@cause_lines.join(" "))
           cause.empty? ? main : "#{main} #{cause}"
         end
       end
 
       private
+
+      # The message without the source echo: the echo block up to the first
+      # blank line, or just the echo line when a matcher appended its message
+      # straight onto it. A message that is nothing but an echo keeps it,
+      # rather than leaving the fingerprint no text at all.
+      def identity_lines
+        start = @lines.index { |line| !line.strip.empty? }
+        return @lines unless start && source_echo?(@lines[start])
+
+        blank = ((start + 1)...@lines.size).find { |index| @lines[index].strip.empty? }
+        rest = blank ? @lines.drop(blank + 1) : @lines.drop(start + 1)
+        rest.any? { |line| !line.strip.empty? } ? rest : @lines
+      end
 
       # RSpec separates the source echo from the diagnosis with a blank line
       # when it can. When it cannot -- a matcher that appends its message

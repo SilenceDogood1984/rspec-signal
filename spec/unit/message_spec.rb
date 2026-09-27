@@ -167,4 +167,46 @@ RSpec.describe RSpec::Signal::Message do
       expect(message.summary(40).length).to eq(40)
     end
   end
+
+  # RSpec echoes the failing source line. When the raise site is inside a gem
+  # that line is each example's own call site, so it must not be identity.
+  describe "#normalized, RSpec's source echo" do
+    def normalized(lines)
+      build_message(lines).normalized
+    end
+
+    it "is left out, so the same error from two call sites is the same text" do
+      one = normalized(["Failure/Error: let(:user) { create(:user) }", "", "ActiveRecord::RecordInvalid:",
+                        "  Validation failed: Organization must exist"])
+      two = normalized(["Failure/Error: before { @admin = create(:user, :admin) }", "",
+                        "ActiveRecord::RecordInvalid:", "  Validation failed: Organization must exist"])
+
+      expect(one).to eq(two)
+      expect(one).not_to include("Failure/Error", "create(:user")
+    end
+
+    it "is left out when it spans several lines" do
+      text = normalized(["Failure/Error:", "  expect(total)", "    .to eq(110)", "", "  expected: 110",
+                         "       got: 100"])
+
+      expect(text).to eq("expected: 110 got: 100")
+    end
+
+    it "drops only the echo line when a matcher appended its message straight onto it" do
+      expect(normalized(["Failure/Error: expect(a).to be_valid", "  expected valid? to be truthy"]))
+        .to eq("expected valid? to be truthy")
+    end
+
+    it "keeps an echo that is the whole message, rather than leaving no text" do
+      expect(normalized(["Failure/Error: expect(a).to be_truthy"])).to eq("Failure/Error: expect(a).to be_truthy")
+    end
+
+    it "leaves what the reader sees untouched" do
+      message = build_message(["Failure/Error: create(:user)", "", "ActiveRecord::RecordInvalid:",
+                               "  Validation failed"])
+
+      expect(message.body.first).to eq("Failure/Error: create(:user)")
+      expect(message.summary).to eq("Validation failed")
+    end
+  end
 end

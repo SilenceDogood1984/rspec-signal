@@ -17,13 +17,14 @@ module RSpec
 
       attr_reader :failures, :groups, :clusters, :code_paths, :example_count, :failure_count,
                   :pending_count, :duration, :seed, :seed_used, :environment,
-                  :errors_outside_examples, :outside_example_failures, :run_id
+                  :errors_outside_examples, :outside_example_failures, :run_id, :census
       attr_accessor :comparison
 
       def initialize(failures:, example_count: 0, failure_count: nil, pending_count: 0,
                      duration: nil, seed: nil, seed_used: false, environment: {},
                      errors_outside_examples: 0, relate_failures: true, outside_example_failures: [],
-                     run_id: nil, code_path_depth: CodePaths::DEFAULT_DEPTH)
+                     run_id: nil, code_path_depth: CodePaths::DEFAULT_DEPTH, census: nil,
+                     causal_analysis: false)
         @failures = failures
         @groups = Grouper.call(failures)
         @clusters = relate_failures ? safely { Clusterer.call(failures) } : []
@@ -38,6 +39,33 @@ module RSpec
         @errors_outside_examples = errors_outside_examples
         @outside_example_failures = outside_example_failures
         @run_id = run_id
+        @census = census
+        @causal_analysis = causal_analysis
+      end
+
+      # The experimental relationship analysis, or nil when it is switched off
+      # or fails. Computed on first use; like the other analysis layers it can
+      # never take the report down.
+      def analysis
+        return @analysis if defined?(@analysis)
+
+        @analysis = @causal_analysis ? Causal::Analysis.call(self) : nil
+      rescue StandardError
+        @analysis = nil
+      end
+
+      # Empty when there is nothing beyond the signatures to say. Rendering is
+      # as fail-soft as the analysis: a bug here must not cost the report.
+      def relationship_lines
+        relationships&.terminal_lines || []
+      rescue StandardError
+        []
+      end
+
+      def relationship_markdown(signature_positions)
+        relationships(signature_positions)&.markdown
+      rescue StandardError
+        nil
       end
 
       # The analysis layers are the newest and least essential stages; a report
@@ -89,7 +117,7 @@ module RSpec
         total_frames - omitted_frames
       end
 
-      def to_h(config = nil)
+      def to_h(config = nil, include_analysis: true)
         budgets = message_budgets(config)
         {
           schema: SCHEMA,
@@ -102,7 +130,8 @@ module RSpec
           signatures: groups.map { |group| group.to_h(**budgets) },
           related: clusters.map(&:to_h),
           code_paths: code_paths.map(&:to_h),
-          outside_examples: outside_example_failures.map { |failure| failure.to_h(**budgets) }
+          outside_examples: outside_example_failures.map { |failure| failure.to_h(**budgets) },
+          analysis: include_analysis ? analysis_h : nil
         }.compact
       end
 
@@ -117,12 +146,30 @@ module RSpec
         serialized = failures.map do |failure|
           attributes = failure.to_h(**budgets).merge(fingerprint: failure.fingerprint.to_h)
           attributes[:raw] = failure.raw if write_full
+          attributes[:evidence] = failure.evidence.to_h if failure.evidence
           attributes
         end
-        to_h(config).merge(schema: WORKER_SCHEMA, failures: serialized)
+        # The parent analyses the whole run from every worker's evidence and
+        # census; a worker's own partial analysis would only mislead.
+        payload = to_h(config, include_analysis: false).merge(schema: WORKER_SCHEMA, failures: serialized)
+        census ? payload.merge(census: census.to_h) : payload
       end
 
       private
+
+      def relationships(signature_positions = {})
+        analysis && Reporters::Relationships.new(analysis, signature_positions)
+      end
+
+      def analysis_h
+        relationships(signature_positions)&.to_h
+      rescue StandardError
+        nil
+      end
+
+      def signature_positions
+        groups.each_with_index.to_h { |group, index| [group.fingerprint.digest, index + 1] }
+      end
 
       def summary_h
         {

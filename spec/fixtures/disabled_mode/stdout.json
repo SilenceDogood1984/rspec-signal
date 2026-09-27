@@ -1,0 +1,6 @@
+[
+  "21 examples, 8 failures, 0 pending",
+  "rspec-signal: 8 failures in 5 distinct signatures (N omitted)",
+  "Since last run: Signatures: 1 resolved, 5 persistent; failures: 9 -> 8",
+  "Report: tmp/rspec-signal/signal.md"
+]

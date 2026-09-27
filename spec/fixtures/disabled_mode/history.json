@@ -1,0 +1,80 @@
+[
+  {
+    "examples": 21,
+    "failures": 9,
+    "signatures": [
+      {
+        "digest": "dfa28d6c9874",
+        "loose": "b67d1e452305",
+        "exception": "FakeBot::RecordInvalid",
+        "count": 3
+      },
+      {
+        "digest": "7998e4e1a8cd",
+        "loose": "b11e4716565d",
+        "exception": "RuntimeError",
+        "count": 2
+      },
+      {
+        "digest": "a75e84392d00",
+        "loose": "499735036f34",
+        "exception": "Billing::RateUnavailable",
+        "count": 1
+      },
+      {
+        "digest": "bb7bc97395c2",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
+        "count": 1
+      },
+      {
+        "digest": "fb04244cb8e3",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
+        "count": 1
+      },
+      {
+        "digest": "3711d1493237",
+        "loose": "d0ce8f71b164",
+        "exception": "RSpec::Expectations::ExpectationNotMetError",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "examples": 21,
+    "failures": 8,
+    "signatures": [
+      {
+        "digest": "dfa28d6c9874",
+        "loose": "b67d1e452305",
+        "exception": "FakeBot::RecordInvalid",
+        "count": 3
+      },
+      {
+        "digest": "7998e4e1a8cd",
+        "loose": "b11e4716565d",
+        "exception": "RuntimeError",
+        "count": 2
+      },
+      {
+        "digest": "a75e84392d00",
+        "loose": "499735036f34",
+        "exception": "Billing::RateUnavailable",
+        "count": 1
+      },
+      {
+        "digest": "bb7bc97395c2",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
+        "count": 1
+      },
+      {
+        "digest": "fb04244cb8e3",
+        "loose": "4b816293ae93",
+        "exception": "MissingCredential",
+        "count": 1
+      }
+    ]
+  }
+]

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Relationships (experimental, off by default).** With `config.causal_analysis = true`,
+  a fourth layer relates *signatures* by structural evidence only: a `before(:context)`
+  exception object shared by every example, one underlying exception (bare or wrapped)
+  at one first-party line, a missing definition read from exception attributes (`ENV`
+  key, constant, method on a first-party class), or one failing setup step. Signatures
+  are grouped as CAUSAL (always HIGH), SCOPE (concentration in one file or `type:`; no
+  confidence, no cause wording) or INDEPENDENT (no relationship found), and every
+  failure is classified into exactly one group. Printed only when it adds something;
+  published as an `analysis` block in `signal.json` marked `"experimental": true`,
+  whose fields may change. Evaluated by a corpus of real runs in `spec/causal/`.
 - **Shared code paths.** A third analysis layer that reads the *stack* rather than
   the message, and reports the first-party lines that more than one signature runs
   through. This relates failures whose messages have nothing in common — a `KeyError`
@@ -36,6 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **RSpec's `Failure/Error:` source echo is no longer part of a signature.** When an
+  error is raised inside a gem -- a factory's `save!`, a driver call -- RSpec echoes
+  each example's own call site, so one broken factory used to become one signature per
+  `create` line. The echo is still shown; it just no longer decides identity.
+  Every digest changes once as a result, so `history.json` moves to schema 2 and an
+  older file is ignored: the first run after upgrading has no "since last run" line,
+  rather than reporting every signature as resolved and new.
 - **Rerun commands now name RSpec example ids rather than locations**, shell-quoted.
   A location selects every example defined on that line, so the printed command could
   rerun ten examples for a loop-generated `it`, and the *same* command could be

@@ -193,6 +193,48 @@ RSpec.describe "a real rspec run", :integration do
     end
   end
 
+  # One broken factory, created from four different spec lines. The error is
+  # raised inside a gem, so RSpec's `Failure/Error:` line echoes each call
+  # site -- which used to make four signatures out of one failure.
+  describe "one broken factory reached from different spec lines" do
+    let(:run) do
+      project.install_spec_helper
+      project.write("vendor/gems/fakebot-6.4.0/lib/fakebot.rb", <<~RUBY)
+        module FakeBot
+          class RecordInvalid < StandardError; end
+          def self.create(_name, overrides = {})
+            raise RecordInvalid, "Validation failed: Organization must exist" unless overrides[:organization]
+          end
+        end
+      RUBY
+      project.write("spec/users_spec.rb", <<~RUBY)
+        $LOAD_PATH.unshift(File.expand_path("../vendor/gems/fakebot-6.4.0/lib", __dir__))
+        require "fakebot"
+        RSpec.describe "User" do
+          let(:user) { FakeBot.create(:user) }
+          it("has a name") { expect(user).to be_truthy }
+          it("signs in") { expect(user).to be_truthy }
+        end
+        RSpec.describe "Admin" do
+          before { @admin = FakeBot.create(:user, role: :admin) }
+          it("sees the dashboard") { expect(1).to eq(1) }
+        end
+        RSpec.describe "Team" do
+          it("adds a member") { FakeBot.create(:user, name: "Bo") }
+        end
+      RUBY
+      project.run_signal
+    end
+
+    it "reports one signature, not one per call site" do
+      expect(run.stdout).to include("rspec-signal: 4 failures in 1 distinct signature")
+    end
+
+    it "still shows the reader the first call site's source line" do
+      expect(run.summary).to include("Failure/Error: let(:user) { FakeBot.create(:user) }")
+    end
+  end
+
   describe "artifact hygiene" do
     before do
       project.install_spec_helper

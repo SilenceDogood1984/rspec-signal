@@ -28,6 +28,12 @@ module RSpec
       # many reach the Markdown report.
       attr_accessor :code_path_depth, :max_code_paths
 
+      # Experimental relationships between signatures (causal / scope /
+      # independent groups). Off by default while it is being dogfooded; its
+      # thresholds are internal constants, not configuration.
+      # See docs/design/causal-failure-intelligence.md.
+      attr_accessor :causal_analysis
+
       # Secret scrubbing.
       attr_accessor :redact, :redaction_patterns, :redaction_filter
 
@@ -128,6 +134,7 @@ module RSpec
       def default_artifacts
         @reduce_html        = true
         @relate_failures    = true
+        @causal_analysis    = false
         @redact             = true
         @redaction_patterns = []
         @redaction_filter   = nil

@@ -9,9 +9,13 @@ module RSpec
                   :exception_class, :message, :reduced, :frames,
                   :diagnostics, :shared_group_locations, :raw
 
+      # Structural facts for the experimental relationship analysis
+      # ({Causal::Evidence}); nil when they could not be captured.
+      attr_accessor :evidence
+
       def initialize(description:, spec_location:, exception_class:, message:, reduced:, frames:,
                      rerun: nil, example_id: nil, diagnostics: {}, shared_group_locations: [],
-                     raw: nil, fingerprint: nil)
+                     raw: nil, fingerprint: nil, evidence: nil)
         @description = description
         @spec_location = spec_location
         @exception_class = exception_class
@@ -24,6 +28,7 @@ module RSpec
         @shared_group_locations = shared_group_locations
         @raw = raw
         @fingerprint = fingerprint
+        @evidence = evidence
       end
 
       # The argument that reruns exactly this example and nothing else.

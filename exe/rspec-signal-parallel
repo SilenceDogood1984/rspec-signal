@@ -35,6 +35,7 @@ begin
   puts "#{report.example_count} examples, #{report.failure_count} failures across #{result.workers} workers"
   puts "rspec-signal: #{report.group_count} exact signatures, #{report.cluster_count} related clusters, " \
        "#{report.omitted_frames} backtrace frames omitted"
+  report.relationship_lines.each { |line| puts line }
   if result.write_result.summary_path
     puts "Report: #{RSpec::Signal::Writer.new(RSpec::Signal.configuration).relative(result.write_result.summary_path)}"
   end

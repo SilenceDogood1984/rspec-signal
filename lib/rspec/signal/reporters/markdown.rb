@@ -27,6 +27,7 @@ module RSpec
           sections.concat(OutsideExamples.new(@report, @config).render)
           # Themes before the inventory: what an agent needs first is the
           # possibility that thirty-five signatures are five problems.
+          sections << relationships_section
           sections << code_paths_section
           sections << related_section
           sections << index if @report.group_count > 1
@@ -106,6 +107,10 @@ module RSpec
 
         def related_section
           RelatedFailures.new(@report.clusters, signature_positions, @config).render
+        end
+
+        def relationships_section
+          @report.relationship_markdown(signature_positions)
         end
 
         def code_paths_section

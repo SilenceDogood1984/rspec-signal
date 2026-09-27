@@ -34,7 +34,7 @@ module RSpec
       def configuration_h(config)
         %i[output_dir project_root max_frames max_external_context max_project_frames fallback_frames
            max_message_lines max_diff_lines reduce_html max_html_chars max_affected_examples max_groups
-           relate_failures max_clusters max_cluster_specs code_path_depth max_code_paths
+           relate_failures max_clusters max_cluster_specs code_path_depth max_code_paths causal_analysis
            write_json write_full write_gitignore track_history terminal_summary capture_capybara
            capture_page_html].to_h { |name| [name, config.public_send(name)] }
       end

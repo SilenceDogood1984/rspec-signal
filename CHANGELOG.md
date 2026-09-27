@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Relationships (experimental).** A fourth analysis layer relating signatures by
+  structural evidence only: a `before(:context)` exception object shared by every example,
+  one underlying exception (bare or wrapped) at one first-party line, a missing definition
+  read from exception attributes (`ENV` key, constant, method on a first-party class), or
+  one failing setup step. Groups are CAUSAL (always HIGH), SCOPE (failure concentration
+  in one file or `type:`, with no confidence and no cause wording) or INDEPENDENT, and the
+  run says how many failures it accounted for. Printed only when it adds something to the
+  signatures; published as `analysis` in `signal.json`; evaluated by a corpus of real runs
+  in `spec/causal/`. Turn it off with `config.causal_analysis = false`.
 - **Shared code paths.** A third analysis layer that reads the *stack* rather than
   the message, and reports the first-party lines that more than one signature runs
   through. This relates failures whose messages have nothing in common — a `KeyError`

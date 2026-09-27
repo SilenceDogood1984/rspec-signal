@@ -26,6 +26,7 @@ module RSpec
         @outside = []
         @errors = []
         @summary = {}
+        @census = Causal::Census.new
         @seed = nil
         @seed_used = false
         @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
@@ -42,7 +43,8 @@ module RSpec
         start_progress(notification.count)
       end
 
-      def example_passed(_notification)
+      def example_passed(notification)
+        @census.record(notification, failed: false) if config.causal_analysis
         advance_progress
       end
 
@@ -53,6 +55,7 @@ module RSpec
       def example_failed(notification)
         return unless config.enabled?
 
+        @census.record(notification, failed: true) if config.causal_analysis
         @failures << builder.call(notification, position: @failures.size + 1)
       rescue StandardError => e
         record_error(e)
@@ -126,7 +129,9 @@ module RSpec
           outside_example_failures: @outside,
           relate_failures: config.relate_failures,
           code_path_depth: config.code_path_depth,
-          run_id: @run_id
+          run_id: @run_id,
+          census: @census,
+          causal_analysis: config.causal_analysis
         )
       end
 
@@ -222,6 +227,7 @@ module RSpec
         @output.puts
         print_rspec_summary(current) if RSpec::Signal.quiet_mode?
         @output.puts signal_line(current)
+        current.relationship_lines.each { |line| @output.puts line }
         print_comparison(current)
         print_code_paths(current)
         @output.puts "Report: #{writer.relative(result.summary_path)}" if result.summary_path

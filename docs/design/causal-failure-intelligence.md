@@ -1,6 +1,9 @@
 # Design: Causal Failure Intelligence
 
-Status: proposal, not implemented. Nothing in `lib/` changes because of this document.
+Status: **spike implemented** (experimental, on by default, `config.causal_analysis = false`
+turns it off). The spike changed several assumptions below; [§0](#0-spike-results) is
+authoritative where it and the original proposal disagree, and the superseded passages
+are marked in place.
 
 Question this answers: can `rspec-signal`, given a red run with many failures, say which
 failures are probably one problem, which are symptoms of it, which are unrelated, where to
@@ -12,6 +15,119 @@ observe and not to conclude.** The gem can see evidence that never reaches the r
 text: exception object identity, execution phase, passing examples, per-worker timelines,
 structured exception attributes. A coding agent reading text can do semantic inference
 on its own; it cannot recover any of that. The design below leans on that asymmetry.
+
+---
+
+## 0. Spike results
+
+The spike implements capture (phase, place of raising, missing definitions, exception
+identity), a pass/fail census, the relationship analysis, terminal and Markdown output,
+and an `analysis` block in `signal.json`, and evaluates them on a corpus of 16 real
+`rspec` runs with known causes (`spec/causal/`). Run it with
+`bundle exec ruby spec/causal/evaluate.rb --verbose`.
+
+### What the implementation changed
+
+1. **Concentration is not a cause.** The original §2/§4/§8 called the 9-failure run "one
+   likely cause, MEDIUM". The spike reports it as **SCOPE**: a fact about *where*, with no
+   confidence label and no cause wording. Nothing upgrades a scope group: any second
+   structural signal strong enough to do so would already have linked the failures.
+2. **Causal groups are HIGH only.** No evidence type available to the spike met a genuine
+   "two independent supporting signals" bar for MEDIUM without also being structural. The
+   JSON keeps `"confidence": "high"` so a weaker level can be added later if earned.
+3. **Exception identity links only inside `before(:context)`.** Ruby keeps the *first*
+   raise's backtrace when one exception instance is raised again, so a reused instance
+   (`raise NOT_FOUND` from two places) reaches RSpec as one object with one stale origin.
+   RSpec shares an object across examples only when a `before(:context)` hook fails; any
+   other sharing is reported as a `reused_exception_instance` hint, never a link.
+4. **Origin linking is narrower than §5 Layer 2 proposed.** "Same raise site and class"
+   admits chokepoints that raise different messages. The spike links only when the
+   *underlying* exception (innermost cause) has the same class, the same normalized
+   message **of the exception itself** (not RSpec's rendering, which opens with the
+   failing source line and so differs at every call site), and the same first-party
+   origin. That relates a wrapped exception to its bare twin, and nothing else. Same site
+   with different messages is a `same_origin_different_message` hint.
+5. **Worker concentration was removed.** In the corpus, `parallel_tests` put a 40-example
+   passing file alone on worker 1 and every failing file on worker 2, producing a true but
+   meaningless "13/13 failed on worker 2". Workers are assigned by file size, so worker
+   concentration mostly restates file assignment.
+6. **Missing definitions come only from exception attributes**: `env:` (`KeyError#receiver`
+   is `ENV`), `const:` (`NameError#name`, qualified by `#receiver`), and `method:`
+   (`NoMethodError` on a class whose source is first-party, via
+   `Object.const_source_location`). Never a nil receiver, never a core class. Tables,
+   columns, routes and embedded error lines would need message regexes and are deferred.
+7. **A lazily evaluated `let` is the body.** The body had begun; "body never reached" is
+   claimed only for `before` and `before(:context)` failures.
+8. **A lone signature forms a causal group only with a fact its fingerprint lacks**:
+   shared `before(:context)` object, failing in setup/`let`/teardown, a missing definition,
+   or the same error outside examples in several files. A plain repeated signature stays
+   independent -- it is already a signature.
+9. **Phase detection is version-robust by construction**: hook frames are classified by
+   the `source_location` of `BeforeHook#run`, `AfterHook#run` and `AroundHook#execute_with`
+   in the *loaded* rspec-core (Ruby 3.4 labels are matched by name first). Verified on
+   rspec-core 3.10.2 and 3.13.6 by specs that raise inside real hooks.
+
+### Taxonomy as built
+
+| Kind | Meaning | Confidence |
+|---|---|---|
+| CAUSAL | every member shares one `before(:context)` exception object, one underlying exception at one line, one missing definition, or one failing setup step | HIGH |
+| SCOPE | ≥ 3 failures in ≥ 2 otherwise-unlinked signatures, all inside one file or one `type:`, where ≥ 2/3 of that scope failed and < 1/20 of the rest did, and the rest is at least as large | none |
+| INDEPENDENT | no relationship found -- not "proven unrelated" | none |
+| hint | `same_origin_different_message`, `reused_exception_instance`; JSON only, never changes grouping | none |
+
+Every failure (and every captured error outside examples) is in exactly one group;
+`n/n failures accounted for` is printed, and failures RSpec counted but rspec-signal
+could not capture are reported as `not captured`.
+
+### Results
+
+Pairwise "same cause" relation over 91 failures in 16 scenarios (123 true pairs):
+
+| Layer | Precision | Recall | Recall, structurally solvable | Wrong pairs |
+|---|---|---|---|---|
+| exact signatures (today) | 0.97 | 0.55 | 0.75 | 2 |
+| signatures + related clusters + shared code paths (today) | 0.95 | 0.59 | 0.81 | 4 |
+| signatures + causal groups (spike) | 0.98 | 0.72 | **1.00** | 2 |
+
+- 10 causal groups, **0 impure**; 28 genuinely independent failures, **0 merged**; all 16
+  scenarios fully accounted for.
+- Both remaining wrong pairs are inherited from exact signatures (a shared example failing
+  identically in two independently broken hosts; a reused exception instance). The causal
+  layer adds none, and declines to promote either to a causal group.
+- Unsolved by design: one regression seen by three assertions, order-dependent
+  pollution, and the environment replica (reported as SCOPE). Nothing structural relates
+  them, and the spike says nothing rather than guess.
+- **Caveat:** the corpus was written by the same person who wrote the rules. It proves the
+  rules do what they claim and refuse what they should; it is not evidence of how often
+  real suites contain structurally solvable failures.
+
+This repository's own run in a container without the `rspec` binstub, previously
+"9 failures in 6 distinct signatures, 0 related clusters, 0 shared code paths", now adds:
+
+```text
+SCOPE · 9 failures in 6 signatures
+  failure concentration: 9/11 examples failed in spec/integration/parallel_tests_spec.rb; 0/529 elsewhere
+9/9 failures accounted for: 0 causal, 9 scope, 0 independent
+```
+
+### Known gaps found by the spike
+
+- A signature joins a scope group only if *all* its failures are inside the scope. With
+  the corpus spec also failing for the same environmental reason, one `Errno::ENOENT`
+  signature spans two files and stays independent, so the scope group reads "5 failures"
+  beside a "9/11" statistic. Truthful, but not tidy.
+- A browser-driver failure reached partly from `before` hooks and partly from example
+  bodies is one signature with mixed phases, so the spike adds nothing to it.
+- Errors outside examples are grouped by the analysis and in `signal.md`, but
+  `signal.json`'s `outside_examples` stays a flat list for compatibility.
+
+### Costs
+
+About 0.1 ms of capture per failure (the existing per-failure pipeline is about 1.5 ms),
+about 3 µs of counting per example (7 KB of counters for 10,000 examples in 300 files),
+and about 25 ms of analysis for 400 signatures. Worker payloads gain one small `evidence`
+hash per failure and a `census`; no backtraces or exception objects cross processes.
 
 ---
 
@@ -163,8 +279,8 @@ cause*, and what would say *independent* instead.
 signatures. Today: 6 items. One cause: confinement + saturation (9/11 vs 0/493), clean
 tree, embedded `command not found` in 3 members. Independent would look like: failures
 spread across groups, a non-empty diff touching the code each one exercises. Verdict:
-one cluster, **MEDIUM** (confinement is scope evidence, not a shared locus), clue line
-shows the embedded error.
+~~one cluster, **MEDIUM**~~ *(superseded, see §0: a SCOPE group, no confidence, no cause
+wording; the embedded-error clue is deferred)*.
 
 **S2 — Missing ENV var at call time.** `ENV.fetch("STRIPE_SECRET_KEY")` in a service;
 14 failures across request, job and model specs, raised from two call sites. Today: 2
@@ -356,6 +472,8 @@ instead hands the agent structured evidence, falsifiers and experiments (§8).
 
 ## 6. Confidence
 
+*Superseded by §0: the spike has HIGH causal groups only, and scope carries no confidence.*
+
 Three words, defined by rules, published in the README, printed with their evidence.
 No percentages: there is no calibration data that would make a number honest.
 
@@ -435,6 +553,9 @@ as *previously masked* (store hashed example ids per signature).
 ## 8. UX
 
 ### Terminal (quiet mode stdout)
+
+*Superseded by §0: the spike prints `CAUSAL · HIGH`, `SCOPE` and `INDEPENDENT` groups and
+never the words "likely cause". The mock-ups below are the original proposal.*
 
 Replaces the "Shared code paths" line. Hard budget: 3 clusters, 2 lines each, 10 lines
 total.

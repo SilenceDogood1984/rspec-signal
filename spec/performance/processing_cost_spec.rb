@@ -87,6 +87,28 @@ RSpec.describe "processing cost", :performance do
     expect(large_time).to be < (small_time * 8 * 4)
   end
 
+  # The experimental relationship analysis runs on every report, so it gets
+  # the same two guards: bounded, and not quadratic. Its relations are joins on
+  # shared values, never pairwise comparisons.
+  def with_evidence(failures)
+    failures.each_with_index do |failure, index|
+      failure.evidence = RSpec::Signal::Causal::Evidence.new(
+        file: "spec/f#{index % 30}_spec.rb", identities: ["e#{index}"], phase: "body",
+        entities: (index % 9).zero? ? ["env:KEY_#{index % 4}"] : [], link_key: "k#{index % 50}"
+      )
+    end
+  end
+
+  it "relates the failures of a large run quickly, and roughly linearly" do
+    small = build_report(with_evidence(build_failures(100)))
+    large = build_report(with_evidence(build_failures(800)))
+    analyse = ->(report) { Benchmark.realtime { RSpec::Signal::Causal::Analysis.call(report) } }
+    [small, large].each { |report| analyse.call(report) }
+
+    expect(analyse.call(large)).to be < 0.5
+    expect(analyse.call(large)).to be < (analyse.call(small) * 8 * 4)
+  end
+
   # The central claim of the product: a hundred times the failures is not a
   # hundred times the report, as long as they are the same handful of problems.
   it "keeps the report bounded by the number of problems, not the number of failures" do

@@ -338,6 +338,7 @@ to paste, and a directory of near-duplicate fragments is just more to sift throu
 | `related[]` | Symptom clusters |
 | `code_paths[]` | Lines of your code crossed by more than one signature |
 | `outside_examples[]` | Failures RSpec reported without an example |
+| `analysis` | Experimental: `groups[]` (`kind` causal / scope / independent, `confidence`, `evidence[]`, `members[]` with phase, origin and missing definitions, `verify` or `experiment`), `hints[]`, and `accounted` |
 
 Only the representative carries a full trace. That is the size trade-off the whole
 gem is built on: the other members of a signature are, by definition, the same
@@ -625,6 +626,52 @@ no line is shared, the section does not appear.
 Ordering is deterministic: most signatures spanned, then most examples, then run
 order.
 
+## Relationships (experimental)
+
+Signatures say which failures are *the same failure*. This layer says which signatures
+are related, and only by facts it can check. It is experimental: on by default, and
+`config.causal_analysis = false` removes it. When it has nothing to add beyond the
+signatures, it prints nothing.
+
+```text
+CAUSAL · HIGH · 5 failures in 1 signature
+  failed during setup (before hook at spec/support/auth.rb:3); example body never reached
+  raised at lib/session.rb:4
+CAUSAL · HIGH · 4 failures in 2 signatures
+  missing ENV key STRIPE_SECRET_KEY (KeyError raised by ENV itself)
+  raised at lib/payments.rb:3, lib/webhooks.rb:3
+INDEPENDENT · 4 failures in 4 signatures (no relationship found)
+13/13 failures accounted for: 9 causal, 0 scope, 4 independent
+```
+
+| Group | What it claims | Evidence it may use |
+|-------|----------------|---------------------|
+| **CAUSAL · HIGH** | These failures share an origin | one exception object RSpec handed to every example of a failed `before(:context)`; one underlying exception (same class, message and first-party line), bare or wrapped; one missing definition read from the exception itself -- an `ENV` key (`KeyError#receiver` is `ENV`), a constant (`NameError#name`), a method on a class defined in your project; one failing setup step (`before` hook, `let`, `after` hook); one error outside examples repeated across spec files |
+| **SCOPE** | Failures are concentrated here -- *where*, never *why* | `9/11 examples failed in spec/x_spec.rb; 0/529 elsewhere`: at least two otherwise-unlinked signatures, in one file or one `type:`, where at least two thirds failed and fewer than one in twenty elsewhere did. No confidence label |
+| **INDEPENDENT** | No relationship was found | Not "proven unrelated" |
+
+What it knows that raw output does not show: which phase failed (read from the frames
+RSpec itself puts on the stack, before reduction discards them), whether examples ever
+reached their bodies, which exception object they received, and how many examples
+*passed* in the same file.
+
+What it deliberately does not infer:
+
+- a cause from exception class, message similarity, file, timing or test order;
+- anything from a method missing on `nil` or on a core class -- two nils are not one nil;
+- a shared object outside `before(:context)`: Ruby keeps the first backtrace when an
+  exception instance is raised again, so a reused instance cannot prove anything;
+- concentration per parallel worker: `parallel_tests` assigns files to workers by size,
+  so "every failure ran on worker 2" usually just means "every failing file did".
+
+Every failure is in exactly one group, and the last line says so. Weaker observations
+(one line raising several different messages; one exception instance reported by
+several examples) appear as `hints` in `signal.json` and never change the grouping.
+
+Evaluation: `bundle exec ruby spec/causal/evaluate.rb --verbose` runs 16 real `rspec`
+projects with known causes and scores this layer against the existing ones. See
+[the design](docs/design/causal-failure-intelligence.md) for the results and the reasoning.
+
 ## Large HTML responses
 
 A request spec expecting one sentence and receiving a Rails exception page produces
@@ -696,6 +743,9 @@ RSpec::Signal.configure do |config|
   # Shared code paths (see "Shared code paths").
   config.code_path_depth = 5   # first-party frames indexed, from the raise site in
   config.max_code_paths  = 5   # paths rendered in full (nil = all)
+
+  # Relationships (experimental; see "Relationships").
+  config.causal_analysis = true
 
   # Artifacts.
   config.write_json      = true

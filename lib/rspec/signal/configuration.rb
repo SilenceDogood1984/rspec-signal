@@ -28,6 +28,10 @@ module RSpec
       # many reach the Markdown report.
       attr_accessor :code_path_depth, :max_code_paths
 
+      # Experimental relationship analysis (causal / scope / independent groups).
+      # See docs/design/causal-failure-intelligence.md.
+      attr_accessor :causal_analysis
+
       # Secret scrubbing.
       attr_accessor :redact, :redaction_patterns, :redaction_filter
 
@@ -128,6 +132,7 @@ module RSpec
       def default_artifacts
         @reduce_html        = true
         @relate_failures    = true
+        @causal_analysis    = true
         @redact             = true
         @redaction_patterns = []
         @redaction_filter   = nil

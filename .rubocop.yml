@@ -20,6 +20,9 @@ Style/Documentation:
 
 Layout/LineLength:
   Max: 120
+  # Corpus scenarios embed whole spec files and their ground truth verbatim.
+  Exclude:
+    - "spec/causal/scenarios.rb"
 
 Naming/FileName:
   # The conventional `gem "rspec-signal"` entry point.
@@ -37,6 +40,7 @@ Metrics/AbcSize:
   Max: 30
   Exclude:
     - "spec/fixtures/**/*"
+    - "spec/causal/**/*"
 
 Metrics/CyclomaticComplexity:
   Max: 10
@@ -54,10 +58,12 @@ Metrics/MethodLength:
   Max: 20
   Exclude:
     - "spec/fixtures/**/*"
+    - "spec/causal/**/*"
 
 Metrics/ModuleLength:
   Exclude:
     - "spec/fixtures/**/*"
+    - "spec/causal/**/*"
 
 Metrics/BlockLength:
   Exclude:
@@ -67,6 +73,11 @@ Metrics/BlockLength:
 Style/ConcatArrayLiterals:
   Exclude:
     - "spec/fixtures/**/*"
+
+# The corpus evaluation is a script that prints a table, not a spec.
+RSpec/Output:
+  Exclude:
+    - "spec/causal/evaluate.rb"
 
 RSpec/ExampleLength:
   Max: 20

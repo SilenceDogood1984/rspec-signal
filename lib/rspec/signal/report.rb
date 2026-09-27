@@ -17,14 +17,14 @@ module RSpec
 
       attr_reader :failures, :groups, :clusters, :code_paths, :example_count, :failure_count,
                   :pending_count, :duration, :seed, :seed_used, :environment,
-                  :errors_outside_examples, :outside_example_failures, :run_id, :census
+                  :errors_outside_examples, :outside_example_failures, :run_id, :census, :selection
       attr_accessor :comparison
 
       def initialize(failures:, example_count: 0, failure_count: nil, pending_count: 0,
                      duration: nil, seed: nil, seed_used: false, environment: {},
                      errors_outside_examples: 0, relate_failures: true, outside_example_failures: [],
                      run_id: nil, code_path_depth: CodePaths::DEFAULT_DEPTH, census: nil,
-                     causal_analysis: false)
+                     causal_analysis: false, selection: nil)
         @failures = failures
         @groups = Grouper.call(failures)
         @clusters = relate_failures ? safely { Clusterer.call(failures) } : []
@@ -41,6 +41,7 @@ module RSpec
         @run_id = run_id
         @census = census
         @causal_analysis = causal_analysis
+        @selection = selection
       end
 
       # The experimental relationship analysis, or nil when it is switched off
@@ -152,6 +153,7 @@ module RSpec
         # The parent analyses the whole run from every worker's evidence and
         # census; a worker's own partial analysis would only mislead.
         payload = to_h(config, include_analysis: false).merge(schema: WORKER_SCHEMA, failures: serialized)
+        payload[:selection] = selection&.to_h
         census ? payload.merge(census: census.to_h) : payload
       end
 

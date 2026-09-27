@@ -9,19 +9,19 @@ RSpec.describe RSpec::Signal::RunStatus do
     status.summarized(summarized) unless summarized.nil?
   end
 
-  it "distinguishes completeness from history eligibility" do
+  it "considers a complete run history eligible regardless of selection scope" do
     finish_run
 
     expect(status).to be_complete(outside_errors: 0)
-    expect(status).not_to be_history_eligible(outside_errors: 0, targeted: true)
-    expect(status.skipped_reason(outside_errors: 0, targeted: true)).to eq("targeted run")
+    expect(status).to be_history_eligible(outside_errors: 0)
+    expect(status.skipped_reason(outside_errors: 0)).to be_nil
   end
 
   it "calls a partially executed run incomplete" do
     finish_run(executed: 1, summarized: 1)
 
     expect(status).not_to be_complete(outside_errors: 0)
-    expect(status.skipped_reason(outside_errors: 0, targeted: false)).to eq("run incomplete")
+    expect(status.skipped_reason(outside_errors: 0)).to eq("run incomplete")
   end
 
   it "requires a summary and rejects errors outside examples" do

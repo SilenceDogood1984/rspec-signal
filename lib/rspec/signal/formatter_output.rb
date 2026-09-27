@@ -62,7 +62,7 @@ module RSpec
       def comparison_skipped_reason
         return unless config.track_history
 
-        @run_status.skipped_reason(outside_errors: outside_example_count, targeted: targeted_run?)
+        @run_status.skipped_reason(outside_errors: outside_example_count)
       end
 
       def print_code_paths(current)

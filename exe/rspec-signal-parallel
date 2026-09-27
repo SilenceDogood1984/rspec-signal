@@ -5,6 +5,7 @@ require "English"
 require "fileutils"
 require "securerandom"
 require "tmpdir"
+require_relative "../lib/rspec/signal/selection"
 
 begin
   parallel_rspec = Gem.bin_path("parallel_tests", "parallel_rspec")
@@ -20,6 +21,7 @@ ENV["RUBYLIB"] = [lib, ENV.fetch("RUBYLIB", nil)].compact.join(File::PATH_SEPARA
 ENV["RSPEC_SIGNAL_RUN_ID"] = run_id
 ENV["RSPEC_SIGNAL_RUN_REGISTRY"] = registry
 ENV["RSPEC_SIGNAL_QUIET"] = "1"
+ENV[RSpec::Signal::Selection::ENV_KEY] = JSON.generate(RSpec::Signal::Selection.from_arguments(ARGV).to_h)
 ENV["PARALLEL_TEST_FIRST_IS_1"] = "true"
 signal_options = "--require rspec/signal --format RSpec::Signal::Formatter"
 ENV["SPEC_OPTS"] = [ENV.fetch("SPEC_OPTS", nil), signal_options].compact.join(" ")

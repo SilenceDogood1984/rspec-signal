@@ -2,6 +2,8 @@
 # frozen_string_literal: true
 
 ENV["RSPEC_SIGNAL_QUIET"] = "1"
+require_relative "../lib/rspec/signal/selection"
+ENV[RSpec::Signal::Selection::ENV_KEY] = JSON.generate(RSpec::Signal::Selection.from_arguments(ARGV).to_h)
 arguments = ["--require", "rspec/signal", "--format", "RSpec::Signal::Formatter", *ARGV]
 
 # The wrapper owns the invocation early enough to invalidate a previous report

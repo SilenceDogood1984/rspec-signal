@@ -9,10 +9,10 @@ module RSpec
     # A short, deliberately boring record of recent runs, so that a run can say
     # what changed rather than describing itself as if it were the first.
     #
-    # Signature *digests and counts only*. No messages, no paths, no source --
-    # nothing that the redactor exists to protect. The file is small by
-    # construction (a few hundred bytes per run, capped at {MAX_RUNS}), lives
-    # beside the other artifacts, and is covered by the same `.gitignore`.
+    # Signature digests and counts contain no messages or source. Selection
+    # entries add only a digest and normalized scope details so a developer can
+    # diagnose why two runs did not compare. The file stays
+    # small by construction and is capped at {MAX_RUNS}.
     #
     # It survives a green run on purpose: "42 failures became 0" is the most
     # valuable comparison there is, and the run that deletes the report is
@@ -23,11 +23,9 @@ module RSpec
     # behaviour of every run before this feature existed.
     class History
       FILE = "history.json"
-      # 2: signature digests no longer include RSpec's `Failure/Error:` source
-      # echo. Schema 1 digests are not comparable, so an older file is ignored
-      # -- one run with nothing to compare against -- rather than reporting
-      # every signature as resolved and new.
-      SCHEMA = 2
+      # 3 adds selection identity. Older runs cannot safely be compared because
+      # they did not record which examples their signatures represent.
+      SCHEMA = 3
       MAX_RUNS = 10
 
       def initialize(config)
@@ -40,7 +38,11 @@ module RSpec
 
       # @return [Comparison, nil]
       def compare(report, run_id:)
-        previous = runs.last
+        return nil unless report.selection
+
+        previous = runs.reverse.find do |entry|
+          report.selection.equivalent?(Selection.from_h(entry["selection"]))
+        end
         return nil unless previous
 
         Comparison.new(previous: previous, current: snapshot(report, run_id: run_id))
@@ -82,6 +84,7 @@ module RSpec
           "at" => Time.now.utc.iso8601,
           "examples" => report.example_count,
           "failures" => report.failure_count,
+          "selection" => report.selection&.to_h,
           "signatures" => report.groups.map { |group| signature_h(group) }
         }
       end

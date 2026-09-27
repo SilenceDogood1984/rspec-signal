@@ -20,10 +20,11 @@ module RSpec
 
       MAX_TOP_CODE_PATHS = 2
 
-      attr_reader :output
+      attr_reader :output, :config
 
       def initialize(output)
         @output = output
+        @config = RSpec::Signal.configuration
         @failures = []
         @outside = []
         @errors = []
@@ -34,16 +35,13 @@ module RSpec
         @run_id = "#{Time.now.utc.strftime("%Y%m%dT%H%M%S")}-#{SecureRandom.hex(4)}"
       end
 
-      def config
-        RSpec::Signal.configuration
-      end
-
       def start(notification)
         # Adding a formatter suppresses RSpec's default one. When rspec-signal
         # installed itself, the user never asked for that, so put it back.
         RSpec::Signal.restore_default_formatter! if RSpec::Signal.auto_installed? && !RSpec::Signal.quiet_mode?
         writer.invalidate_current! if config.enabled? && !dry_run? && !ParallelRun.worker?
         @run_status.selected(notification.count)
+        @selection = Selection.from_rspec
         start_progress(notification.count)
       end
 
@@ -138,7 +136,8 @@ module RSpec
           code_path_depth: config.code_path_depth,
           run_id: @run_id,
           census: @census,
-          causal_analysis: config.causal_analysis
+          causal_analysis: config.causal_analysis,
+          selection: @selection
         )
       end
 
@@ -202,15 +201,7 @@ module RSpec
       end
 
       def history_eligible_run?
-        @run_status.history_eligible?(outside_errors: outside_example_count, targeted: targeted_run?)
-      end
-
-      def targeted_run?
-        rules = ::RSpec.configuration.inclusion_filter.rules
-        rule_names = rules.keys.map(&:to_s)
-        (rule_names & %w[ids locations full_description]).any?
-      rescue StandardError
-        false
+        @run_status.history_eligible?(outside_errors: outside_example_count)
       end
 
       def start_progress(total)

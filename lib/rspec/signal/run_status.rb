@@ -28,14 +28,12 @@ module RSpec
           @executed_count == @selected_count && @summary_example_count == @executed_count
       end
 
-      def history_eligible?(outside_errors:, targeted:)
-        complete?(outside_errors: outside_errors) && !targeted
+      def history_eligible?(outside_errors:)
+        complete?(outside_errors: outside_errors)
       end
 
-      def skipped_reason(outside_errors:, targeted:)
-        return nil if history_eligible?(outside_errors: outside_errors, targeted: targeted)
-
-        complete?(outside_errors: outside_errors) ? "targeted run" : "run incomplete"
+      def skipped_reason(outside_errors:)
+        "run incomplete" unless history_eligible?(outside_errors: outside_errors)
       end
     end
   end

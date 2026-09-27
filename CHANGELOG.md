@@ -47,6 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- In a parallel run, every signature's loose digest was derived from a placeholder
+  message, so signatures of the same exception class shared one loose key and the
+  changed-signature bucket could pair unrelated failures. Worker payloads now carry the
+  loose digest.
+- One error outside examples repeated across many spec files -- a helper every file
+  requires failing at boot -- rendered one identical section per file. It now renders once,
+  naming every file it stopped from loading.
 - `signal.json` ignored `max_message_lines` and `max_diff_lines`, so configuring
   them changed `signal.md` and left the JSON at the built-in defaults.
 - The parallel merger dropped `shared_group_locations`, so the "Via shared example

@@ -108,10 +108,15 @@ module RSpec
           shared_group_locations: data.fetch("shared_groups", []) }
       end
 
+      # The message is not in the payload, so both digests are carried
+      # verbatim. A payload without a loose digest (an older worker) falls back
+      # to the exact digest -- never to a key derived from a placeholder
+      # message, which every signature of the same class would share.
       def load_fingerprint(data)
         Fingerprint.new(exception_class: data["exception"], message: "worker", culprit: data["culprit"],
                         app_context: data["app_context"]).tap do |fingerprint|
           fingerprint.instance_variable_set(:@digest, data["digest"])
+          fingerprint.instance_variable_set(:@loose_digest, data["loose"] || data["digest"])
         end
       end
 

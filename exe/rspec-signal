@@ -4,6 +4,13 @@
 ENV["RSPEC_SIGNAL_QUIET"] = "1"
 arguments = ["--require", "rspec/signal", "--format", "RSpec::Signal::Formatter", *ARGV]
 
+# The wrapper owns the invocation early enough to invalidate a previous report
+# even when RSpec aborts before it can load the formatter.
+unless ARGV.include?("--dry-run") || %w[1 true yes on].include?(ENV.fetch("RSPEC_SIGNAL_DISABLE", "").downcase)
+  require "rspec/signal"
+  RSpec::Signal::Writer.new(RSpec::Signal.configuration).invalidate_current!
+end
+
 # Run the same executable as `bundle exec rspec`. Besides avoiding a parallel
 # implementation of RSpec's CLI, this is important because the executable uses
 # Runner.invoke, which applies RSpec's default spec discovery when no paths are

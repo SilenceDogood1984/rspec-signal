@@ -150,6 +150,51 @@ RSpec.describe RSpec::Signal::Formatter do
     end
   end
 
+  describe "run-start invalidation" do
+    before do
+      FileUtils.mkdir_p(config.output_path)
+      RSpec::Signal::Writer::MANAGED.each do |name|
+        File.write(File.join(config.output_path, name), "previous generation")
+      end
+    end
+
+    it "removes a previous generation before execution can abort" do
+      formatter.start(start_notification(1))
+
+      expect(RSpec::Signal::Writer::MANAGED).to all(
+        satisfy { |name| !File.exist?(File.join(config.output_path, name)) }
+      )
+    end
+
+    it "does not mutate artifacts during a dry run" do
+      allow(RSpec.configuration).to receive(:dry_run?).and_return(true)
+
+      formatter.start(start_notification(1))
+
+      expect(File.read(File.join(config.output_path, "signal.md"))).to eq("previous generation")
+    end
+
+    it "does not mutate artifacts when disabled" do
+      allow(config).to receive(:enabled?).and_return(false)
+
+      formatter.start(start_notification(1))
+
+      expect(File.read(File.join(config.output_path, "signal.md"))).to eq("previous generation")
+    end
+
+    it "leaves no generation when report rendering later fails" do
+      formatter.start(start_notification(1))
+      formatter.example_failed(failure_notification)
+      allow(RSpec::Signal::Reporters::JsonReport).to receive(:new).and_raise("render failed")
+
+      formatter.close(nil)
+
+      expect(RSpec::Signal::Writer::MANAGED).to all(
+        satisfy { |name| !File.exist?(File.join(config.output_path, name)) }
+      )
+    end
+  end
+
   # The formatter must never be the reason a suite blows up.
   describe "resilience" do
     it "survives a notification it cannot read" do

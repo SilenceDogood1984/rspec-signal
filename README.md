@@ -296,11 +296,25 @@ tmp/rspec-signal/
   .gitignore    written automatically; artifacts can contain application data
 ```
 
-A run with **no** failures deletes the report files. A stale report describing
-failures you already fixed is worse than no report at all, because an agent will go
-and "fix" them again.
+At the start of a run, the wrappers delete the previous `signal.md`, `signal.json`,
+and `full.txt`. The formatter does the same when execution starts. New files are
+rendered and staged together, then supporting files are renamed into place before
+`signal.md`. Treat `signal.md` as the publication marker: if it exists, its optional
+companions belong to the same completed generation. An aborted run or rendering
+failure therefore leaves no current report rather than stale or mixed evidence.
 
-`history.json` deliberately survives that cleanup — "42 failures became 0" is the
+The wrapper can invalidate the default (or `RSPEC_SIGNAL_OUTPUT_DIR`) directory before
+RSpec boots. At that point Ruby configuration from a spec helper has not loaded, so
+`config.output_dir` and `config.enabled = false` cannot affect early invalidation. Set
+`RSPEC_SIGNAL_DISABLE=1` to disable the wrapper without mutating artifacts, and use
+`RSPEC_SIGNAL_OUTPUT_DIR` when a custom directory needs the early-failure guarantee.
+Dry runs also leave current artifacts alone.
+
+Plain `bundle exec rspec` cannot invalidate until rspec-signal's formatter starts; a
+failure before the gem or formatter loads can consequently leave the prior artifacts
+in place. Use `rspec-signal` when the early-failure guarantee matters.
+
+`history.json` deliberately survives invalidation — "42 failures became 0" is the
 most valuable thing a run can say, and the run that deletes the report is exactly the
 run that should be able to say it. See
 [Knowing what changed](#knowing-what-changed).

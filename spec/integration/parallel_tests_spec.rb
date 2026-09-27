@@ -67,6 +67,10 @@ RSpec.describe "parallel_tests support", :integration do
   end
 
   it "fails aggregation and warns when a worker artifact is corrupt" do
+    write_failure("old", "old generation")
+    project.run_signal_parallel("-n", "1", "spec")
+    expect(project).to be_artifact("signal.md")
+    FileUtils.rm(File.join(project.root, "spec/old_spec.rb"))
     install_artifact_sabotage
     write_passing(1)
     write_passing(2)
@@ -75,7 +79,7 @@ RSpec.describe "parallel_tests support", :integration do
 
     expect(run.status).not_to eq(0)
     expect(run.output).to include("parallel report aggregation failed", "JSON::ParserError")
-    expect(project).not_to be_artifact("signal.md")
+    expect(%w[signal.md signal.json]).to all(satisfy { |name| !project.artifact?(name) })
   end
 
   it "merges full output in deterministic worker order when enabled" do

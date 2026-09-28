@@ -57,6 +57,16 @@ RSpec.describe RSpec::Signal::ParallelMerger do
     expect(result.report.example_count).to eq(1)
   end
 
+  it "preserves the parent scope identity across parallel workers" do
+    full_suite = RSpec::Signal::Selection.new(paths: ["spec"])
+    write_worker("1", examples: 1, failures: [], selection: full_suite)
+    write_worker("2", examples: 1, failures: [], selection: full_suite)
+
+    selection = described_class.new(registry: registry).call.report.selection
+
+    expect(selection).to be_equivalent(full_suite)
+  end
+
   it "rejects corrupt worker JSON" do
     path = File.join(registry, "worker-1.json")
     File.write(path, "{corrupt")
@@ -167,11 +177,12 @@ RSpec.describe RSpec::Signal::ParallelMerger do
     expect(groups.map(&:size)).to eq([2])
   end
 
-  def write_worker(worker, examples:, failures:, configuration: {})
+  def write_worker(worker, examples:, failures:, configuration: {}, selection: nil)
     path = File.join(registry, "worker-#{worker}.json")
     data = { "schema" => 2, "summary" => { "examples" => examples, "failures" => failures.size,
                                            "pending" => 0 }, "failures" => failures,
              "configuration" => configuration, "environment" => {} }
+    data["selection"] = selection.to_h if selection
     File.write(path, JSON.generate(data))
     File.write(File.join(registry, "#{worker}.path"), path)
   end

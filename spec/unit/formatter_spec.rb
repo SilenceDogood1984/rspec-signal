@@ -5,7 +5,9 @@ RSpec.describe RSpec::Signal::Formatter do
   let(:config) { signal_config }
   let(:formatter) { described_class.new(output) }
 
-  before { allow(formatter).to receive(:config).and_return(config) }
+  before do
+    allow(formatter).to receive(:config).and_return(config)
+  end
 
   after { FileUtils.rm_rf(config.output_path) }
 
@@ -35,7 +37,9 @@ RSpec.describe RSpec::Signal::Formatter do
   end
 
   def drive(*notifications, seed: 1234, seed_used: true)
+    formatter.start(start_notification(10))
     notifications.each { |notification| formatter.example_failed(notification) }
+    (10 - notifications.size).times { formatter.example_passed(nil) }
     formatter.dump_summary(summary_notification(failures: notifications.size))
     formatter.seed(instance_double(RSpec::Core::Notifications::SeedNotification,
                                    seed: seed, seed_used?: seed_used))
@@ -49,13 +53,14 @@ RSpec.describe RSpec::Signal::Formatter do
       expect(File).to exist(File.join(config.output_path, "signal.md"))
     end
 
-    it "prints a two-line terminal summary" do
-      expect(output.string).to include("rspec-signal: 2 failures in 2 distinct signatures")
-      expect(output.string).to include("Report:")
+    it "puts distinct problems and exact actions ahead of the report" do
+      expect(output.string).to include("Signal problems: 2 failures, 2 distinct problems")
+      expect(output.string).to include("Problem #1:", "Exact rerun: bundle exec rspec")
+      expect(output.string.index("Exact rerun:")).to be < output.string.index("Report:")
     end
 
-    it "reports the reduction it achieved" do
-      expect(output.string).to match(/\(\d+ backtrace frames omitted\)/)
+    it "keeps frame-count trivia out of the terminal" do
+      expect(output.string).not_to include("frames omitted")
     end
 
     it "carries the seed into the report" do
@@ -150,6 +155,51 @@ RSpec.describe RSpec::Signal::Formatter do
     end
   end
 
+  describe "run-start invalidation" do
+    before do
+      FileUtils.mkdir_p(config.output_path)
+      RSpec::Signal::Writer::MANAGED.each do |name|
+        File.write(File.join(config.output_path, name), "previous generation")
+      end
+    end
+
+    it "removes a previous generation before execution can abort" do
+      formatter.start(start_notification(1))
+
+      expect(RSpec::Signal::Writer::MANAGED).to all(
+        satisfy { |name| !File.exist?(File.join(config.output_path, name)) }
+      )
+    end
+
+    it "does not mutate artifacts during a dry run" do
+      allow(RSpec.configuration).to receive(:dry_run?).and_return(true)
+
+      formatter.start(start_notification(1))
+
+      expect(File.read(File.join(config.output_path, "signal.md"))).to eq("previous generation")
+    end
+
+    it "does not mutate artifacts when disabled" do
+      allow(config).to receive(:enabled?).and_return(false)
+
+      formatter.start(start_notification(1))
+
+      expect(File.read(File.join(config.output_path, "signal.md"))).to eq("previous generation")
+    end
+
+    it "leaves no generation when report rendering later fails" do
+      formatter.start(start_notification(1))
+      formatter.example_failed(failure_notification)
+      allow(RSpec::Signal::Reporters::JsonReport).to receive(:new).and_raise("render failed")
+
+      formatter.close(nil)
+
+      expect(RSpec::Signal::Writer::MANAGED).to all(
+        satisfy { |name| !File.exist?(File.join(config.output_path, name)) }
+      )
+    end
+  end
+
   # The formatter must never be the reason a suite blows up.
   describe "resilience" do
     it "survives a notification it cannot read" do
@@ -204,6 +254,22 @@ RSpec.describe RSpec::Signal::Formatter do
       formatter.dump_summary(summary_notification(failures: 0, errors: 2))
 
       expect(formatter.report.errors_outside_examples).to eq(2)
+    end
+  end
+
+  describe "history eligibility" do
+    it "records a run only after every selected example reaches a summary" do
+      drive(failure_notification)
+      baseline = File.read(File.join(config.output_path, "history.json"))
+      interrupted = described_class.new(output)
+      allow(interrupted).to receive(:config).and_return(config)
+      interrupted.start(start_notification(2))
+      interrupted.example_failed(failure_notification)
+
+      interrupted.close(nil)
+
+      expect(output.string).to include("comparison skipped (run incomplete)")
+      expect(File.read(File.join(config.output_path, "history.json"))).to eq(baseline)
     end
   end
 end

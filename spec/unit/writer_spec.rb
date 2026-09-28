@@ -47,6 +47,39 @@ RSpec.describe RSpec::Signal::Writer do
     end
   end
 
+  describe "artifact generations" do
+    it "publishes a complete second generation" do
+      writer.write(build_report([failure]))
+      newer = build_failure(config: config, backtrace: Backtraces.pure_ruby,
+                            message: ["second generation"])
+
+      writer.write(build_report([newer]))
+
+      expect(contents("signal.md")).to include("second generation")
+      expect(contents("signal.json")).to include("second generation")
+      expect(Dir[File.join(writer.dir, ".signal.*.tmp")]).to be_empty
+    end
+
+    it "renders every artifact before replacing the current generation" do
+      writer.write(build_report([failure]))
+      allow(RSpec::Signal::Reporters::JsonReport).to receive(:new).and_raise("render failed")
+
+      expect { writer.write(build_report([failure])) }.to raise_error("render failed")
+      expect(contents("signal.md")).to include("Capybara::ElementNotFound")
+      expect(contents("signal.json")).to include("Capybara::ElementNotFound")
+    end
+
+    it "invalidates current artifacts without deleting history" do
+      writer.write(build_report([failure]))
+      File.write(File.join(writer.dir, "history.json"), "history")
+
+      writer.invalidate_current!
+
+      expect(described_class::MANAGED).to all(satisfy { |name| !File.exist?(File.join(writer.dir, name)) })
+      expect(contents("history.json")).to eq("history")
+    end
+  end
+
   describe "optional artifacts" do
     it "can skip the JSON report" do
       writer = described_class.new(signal_config(write_json: false, output_dir: config.output_dir))

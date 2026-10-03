@@ -1,0 +1,37 @@
+{"case":"F01","verdict":"SUSPICIOUS","kind":"misleading_test","reason":"Test claims members are refused but never signs in; request ran anonymous and was halted by authenticate_user!, not an authorization check."}
+{"case":"F02","verdict":"CONSISTENT","kind":"none","reason":"Member signed in, require_admin! halted, redirect and alert asserted as intended."}
+{"case":"F03","verdict":"CONSISTENT","kind":"none","reason":"Admin archived project; update written, redirect and archived state asserted."}
+{"case":"F04","verdict":"SUSPICIOUS","kind":"weak_assertion","reason":"No expectations at all; claims an audit entry is recorded but nothing verifies archive or audit."}
+{"case":"F05","verdict":"SUSPICIOUS","kind":"weak_assertion","reason":"Description says returns the project, but body is a 'not authorized' error with 200; only status asserted."}
+{"case":"F06","verdict":"CONSISTENT","kind":"intentional","reason":"Test deliberately asserts the error object for a non-owner; 200 status is odd but asserted content matches."}
+{"case":"F07","verdict":"CONSISTENT","kind":"none","reason":"Owner requested project, 200 with name asserted."}
+{"case":"F08","verdict":"CONSISTENT","kind":"intentional","reason":"RecordNotFound rescued to 404, which the test deliberately asserts."}
+{"case":"F09","verdict":"SUSPICIOUS","kind":"app_bug","reason":"Export thread died with NameError (missing ProjectCsvSerializer) while the 202 assertion passed; export never actually works."}
+{"case":"F10","verdict":"SUSPICIOUS","kind":"app_bug","reason":"Invalid row raised, whole import rolled back and swallowed, yet flash says 'Import finished'; rows not imported but test passes."}
+{"case":"F11","verdict":"CONSISTENT","kind":"intentional","reason":"Test deliberately asserts no Project created when a row is invalid; rollback is the expected path."}
+{"case":"F12","verdict":"SUSPICIOUS","kind":"app_bug","reason":"Flash says owner notified but NotifyOwnerJob was discarded on Postbox::Rejected; notification failed, test only checks redirect and flash."}
+{"case":"F13","verdict":"CONSISTENT","kind":"intentional","reason":"Provider rejection is deliberately set up and the failed delivery record is asserted."}
+{"case":"F14","verdict":"CONSISTENT","kind":"intentional","reason":"Rejection injected by stub; failed delivery count change asserted as intended."}
+{"case":"F15","verdict":"SUSPICIOUS","kind":"weak_assertion","reason":"No DB write occurred, so the name was not updated; test asserts only redirect and flash, never the name."}
+{"case":"F16","verdict":"CONSISTENT","kind":"none","reason":"Owner listing projects, index rendered, Apollo present."}
+{"case":"F17","verdict":"SUSPICIOUS","kind":"misleading_test","reason":"Description says admins see archived projects, but request ran as a member and assertions only check generic 'Projects' text."}
+{"case":"F18","verdict":"CONSISTENT","kind":"none","reason":"Owner viewed own project; show rendered with Apollo."}
+{"case":"F19","verdict":"SUSPICIOUS","kind":"misleading_test","reason":"Non-owner got shared/not_found rendered with 200; 'Projects' assertion passes on a not-found page, not the project page."}
+{"case":"F20","verdict":"CONSISTENT","kind":"intentional","reason":"Stranger sees the not-found page, which the test explicitly asserts."}
+{"case":"F21","verdict":"SUSPICIOUS","kind":"app_bug","reason":"BudgetForecast raised NoMethodError months_remaining, swallowed by controller; summary rendered degraded while test passed."}
+{"case":"F22","verdict":"SUSPICIOUS","kind":"misleading_test","reason":"Path typo 'sumary' hits no route; 404 comes from routing, not from authorization of the summary action."}
+{"case":"F23","verdict":"CONSISTENT","kind":"none","reason":"Create inserted a project and redirected to it as asserted."}
+{"case":"F24","verdict":"CONSISTENT","kind":"none","reason":"Owner update wrote one row; redirect and new name asserted."}
+{"case":"F25","verdict":"SUSPICIOUS","kind":"misleading_test","reason":"User.new is unsaved so sign-in got 401; update ran anonymous and halted, redirect is to /login not post-update."}
+{"case":"F26","verdict":"CONSISTENT","kind":"intentional","reason":"Anonymous request halted by authentication and redirected to /login as asserted."}
+{"case":"F27","verdict":"CONSISTENT","kind":"none","reason":"Owner patched identical name; no writes and updated_at unchanged, matching the claim."}
+{"case":"F28","verdict":"SUSPICIOUS","kind":"app_bug","reason":"ReportBuilder raised NoMethodError latest_invoice; generic error page served with 200; test only asserts success."}
+{"case":"F29","verdict":"CONSISTENT","kind":"intentional","reason":"Stubbed ReportBuilder failure deliberately triggers friendly error page, which is asserted."}
+{"case":"F30","verdict":"CONSISTENT","kind":"intentional","reason":"Unrouted path 404 without controller is exactly what the test expects."}
+{"case":"F31","verdict":"CONSISTENT","kind":"none","reason":"Sign-in redirects to projects; no DB writes expected."}
+{"case":"F32","verdict":"CONSISTENT","kind":"none","reason":"Signed in then deleted session, redirected to login."}
+{"case":"F33","verdict":"CONSISTENT","kind":"intentional","reason":"Unknown email deliberately yields 401 with sessions/new."}
+{"case":"F34","verdict":"SUSPICIOUS","kind":"misleading_test","reason":"Request without region raised ParameterMissing and returned a 400 exception page, yet banner assertion passed; banner not genuinely shown."}
+{"case":"F35","verdict":"CONSISTENT","kind":"none","reason":"Region param supplied; exact banner body asserted with 200."}
+{"case":"F36","verdict":"CONSISTENT","kind":"intentional","reason":"Missing region raises ParameterMissing resulting in 400, which is exactly asserted."}
+{"case":"F37","verdict":"CONSISTENT","kind":"intentional","reason":"Thread NameError is deliberately provoked and asserted via join raise_error."}

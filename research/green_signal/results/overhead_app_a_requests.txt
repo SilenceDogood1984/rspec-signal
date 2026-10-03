@@ -1,0 +1,15 @@
+# 924-example App A subset (requests + controllers + integration). Pairs 1-3 baseline first, pairs 4-5 instrumented first.
+baseline run=1 | Finished in 2 minutes 35.9 seconds | wall=2:41.56 | max_rss_kb=395792 | 924 examples, 0 failures
+instrumented run=1 | Finished in 2 minutes 45.6 seconds | wall=2:50.29 | max_rss_kb=472244 | 924 examples, 0 failures
+baseline run=2 | Finished in 2 minutes 37.2 seconds | wall=2:41.76 | max_rss_kb=398800 | 924 examples, 0 failures
+instrumented run=2 | Finished in 2 minutes 50.8 seconds | wall=2:55.03 | max_rss_kb=474080 | 924 examples, 0 failures
+baseline run=3 | Finished in 2 minutes 58.1 seconds | wall=3:03.41 | max_rss_kb=397616 | 924 examples, 0 failures
+instrumented run=3 | Finished in 3 minutes 17.8 seconds | wall=3:22.45 | max_rss_kb=474112 | 924 examples, 0 failures
+instrumented run=4 | Finished in 2 minutes 53.7 seconds | wall=2:58.25 | max_rss_kb=470392 | 924 examples, 0 failures
+baseline run=4 | Finished in 2 minutes 40.1 seconds | wall=2:44.45 | max_rss_kb=398788 | 924 examples, 0 failures
+instrumented run=5 | Finished in 2 minutes 53 seconds | wall=2:57.50 | max_rss_kb=470712 | 924 examples, 0 failures
+baseline run=5 | Finished in 2 minutes 39.2 seconds | wall=2:45.36 | max_rss_kb=403128 | 924 examples, 0 failures
+
+# GC, one pair (924 examples): baseline vs instrumented
+{"gc_time_ms"=>13361, "gc_count"=>1053, "major"=>25, "allocated"=>84342278}
+{"gc_time_ms"=>16327, "gc_count"=>1107, "major"=>31, "allocated"=>91868810}

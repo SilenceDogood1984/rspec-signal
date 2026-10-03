@@ -1,0 +1,4 @@
+<h1>Projects</h1>
+<ul>
+  <% @projects.each do |project| %><li><%= project.name %><%= " (archived)" if project.archived? %></li><% end %>
+</ul>

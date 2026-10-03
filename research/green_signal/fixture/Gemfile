@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+# A deliberately tiny Rails app whose green specs are misleading on purpose.
+# Resolved from locally installed gems: `bundle install --local`.
+source "https://rubygems.org"
+
+gem "rails", "8.0.5.1"
+gem "rspec-rails", "~> 8.0"
+gem "sqlite3", "~> 2.7"

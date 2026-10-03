@@ -1,0 +1,30 @@
+# 147-example App A request subset; 5 configurations interleaved, order rotated each round.
+# RSpec 'Finished in' seconds. Round 1 overlapped another suite run on the same database and is excluded.
+# round config seconds
+1 full 
+1 no_tracepoint 37.45
+1 no_expectations 33.62
+1 no_sql 34.04
+1 base 34.24
+2 no_tracepoint 32.33
+2 no_expectations 35.5
+2 no_sql 32.26
+2 base 42.92
+2 full 32.82
+3 no_expectations 32.14
+3 no_sql 33.03
+3 base 32.75
+3 full 32.97
+3 no_tracepoint 33.39
+4 no_sql 32.79
+4 base 32.09
+4 full 32.82
+4 no_tracepoint 33.19
+4 no_expectations 32.78
+
+# Coarse single-run ablation on the 924-example subset, label = the component DISABLED ("baseline" = no observer).
+# One run each, sequential; machine drift dominates the times, so keep it for peak RSS (kB) only.
+baseline | Finished in 3 minutes 51.9 seconds | rss=400688
+tracepoint | Finished in 3 minutes 5.5 seconds | rss=464680
+expectations | Finished in 2 minutes 57.4 seconds | rss=422688
+sql,render,body,logs | Finished in 3 minutes 45.2 seconds | rss=461300

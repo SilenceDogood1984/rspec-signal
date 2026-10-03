@@ -1,0 +1,9 @@
+<!doctype html>
+<html>
+  <head><title>Projects</title></head>
+  <body>
+    <nav><a href="/">Projects</a></nav>
+    <% flash.each do |kind, message| %><p class="flash <%= kind %>"><%= message %></p><% end %>
+    <%= yield %>
+  </body>
+</html>

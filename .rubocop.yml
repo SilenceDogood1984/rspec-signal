@@ -8,6 +8,8 @@ AllCops:
   Exclude:
     - "vendor/**/*"
     - "tmp/**/*"
+    # Spike code and its Rails fixture: never loaded by the gem, never shipped.
+    - "research/**/*"
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes

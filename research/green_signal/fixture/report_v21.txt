@@ -1,0 +1,275 @@
+PASS -- but: Admin projects does not let members archive projects  (spec/requests/admin_projects_spec.rb:7)
+  [MEDIUM] GREEN_AUTH_HALT  POST /admin/projects/1/archive -> Admin::ProjectsController#archive
+      before_action :authenticate_user! halted the request (authentication); Admin::ProjectsController#archive never ran
+      response: 302 -> /login; actor: anonymous
+      why: the example passed without the action under test executing
+      asserted: respond with a redirect status code (3xx); be archived
+
+PASS -- but: Admin projects redirects members away from archiving  (spec/requests/admin_projects_spec.rb:13)
+  [suppressed: the example asserted redirect_to /] GREEN_AUTH_HALT  POST /admin/projects/1/archive -> Admin::ProjectsController#archive
+      before_action :require_admin! halted the request (authorization/guard); Admin::ProjectsController#archive never ran
+      response: 302 -> /; actor: User#2 (role=member)
+      an earlier request in this example signed in / set up a user
+      why: the example passed without the action under test executing
+      asserted: redirect to "/"; eq "Not authorized"
+
+PASS -- but: Admin projects archives a project and records an audit entry  (spec/requests/admin_projects_spec.rb:27)
+  [MEDIUM] GREEN_NO_ASSERTIONS
+      0 expectations ran (2 request(s) issued)
+      why: the example can only fail by raising
+      asserted: no expectations
+
+PASS -- but: API projects returns the project  (spec/requests/api_projects_spec.rb:7)
+  [HIGH] GREEN_ERROR_PAYLOAD  GET /api/projects/1 -> Api::ProjectsController#show
+      200 application/json body has "error": "not authorized"
+      why: a successful status carried a conventional error object; the example asserted only: respond with status code :ok (200)
+      asserted: respond with status code :ok (200)
+
+PASS -- but: API projects refuses non-owners with an error object  (spec/requests/api_projects_spec.rb:13)
+  [suppressed: the example asserted the error content] GREEN_ERROR_PAYLOAD  GET /api/projects/1 -> Api::ProjectsController#show
+      200 application/json body has "error": "not authorized"
+      why: a successful status carried a conventional error object; the example asserted only: eq {"error"=>"not authorized"}
+      asserted: eq {"error"=>"not authorized"}
+
+PASS -- but: Archived projects returns 404 for a project that is not archived  (spec/requests/archived_projects_spec.rb:4)
+  [suppressed: the example asserted status 404] GREEN_RESCUED_EXCEPTION  GET /archived_projects/1 -> ArchivedProjectsController#show
+      ActiveRecord::RecordNotFound "Couldn't find Project with 'id'="1" [WHERE "projects"."archived" = ?]" raised at app/controllers/archived_projects_controller.rb:5
+      handled by rescue_from ActiveRecord::RecordNotFound => render_not_found; response: 404; rendered shared/not_found.html.erb
+      why: an exception was converted into an ordinary response; the example asserted only: respond with a not_found status code (404)
+      asserted: respond with a not_found status code (404)
+
+PASS -- but: Exports starts an export  (spec/requests/exports_spec.rb:4)
+  [HIGH] GREEN_THREAD_DIED
+      thread started at app/controllers/exports_controller.rb:7 died with NameError "uninitialized constant ExportBuilder::ProjectCsvSerializer"
+      raised at app/services/export_builder.rb:10; never joined, so the example could not see it
+      why: work in another thread failed while the example passed
+  [LOW] GREEN_NO_MUTATION  POST /projects/1/exports -> ExportsController#create
+      POST /projects/1/exports -> 202; 0 rows written
+      why: a mutating request wrote nothing and the example asserted no change
+      asserted: respond with status code :accepted (202)
+
+PASS -- but: Imports imports the uploaded rows  (spec/requests/imports_spec.rb:8)
+  [LOW] GREEN_SWALLOWED_EXCEPTION  POST /imports -> ImportsController#create
+      ActiveRecord::RecordInvalid "Validation failed: Name can't be blank" raised at app/controllers/imports_controller.rb:6
+      rescued at app/controllers/imports_controller.rb:12 and not re-raised
+      response: 302 -> /projects
+      why: application code swallowed an exception during a passing example
+  [HIGH] GREEN_ROLLBACK  POST /imports -> ImportsController#create
+      1 write(s) rolled back, 0 kept, inside the request
+      rollback after ActiveRecord::RecordInvalid: Validation failed: Name can't be blank
+      response: 302 -> /projects (flash notice: "Import finished")
+      why: the request looked successful but its database work was discarded
+      asserted: redirect to "/projects"; eq "Import finished"
+
+PASS -- but: Imports imports nothing when one row is invalid  (spec/requests/imports_spec.rb:14)
+  [suppressed: the example asserted that nothing changed] GREEN_SWALLOWED_EXCEPTION  POST /imports -> ImportsController#create
+      ActiveRecord::RecordInvalid "Validation failed: Name can't be blank" raised at app/controllers/imports_controller.rb:6
+      rescued at app/controllers/imports_controller.rb:12 and not re-raised
+      response: 302 -> /projects
+      why: application code swallowed an exception during a passing example
+  [suppressed: the example asserted that nothing changed] GREEN_ROLLBACK  POST /imports -> ImportsController#create
+      1 write(s) rolled back, 0 kept, inside the request
+      rollback after ActiveRecord::RecordInvalid: Validation failed: Name can't be blank
+      response: 302 -> /projects (flash notice: "Import finished")
+      why: the request looked successful but its database work was discarded
+      asserted: change `Project.count`
+
+PASS -- but: Owner notifications notifies the owner  (spec/requests/notifications_spec.rb:4)
+  [HIGH] GREEN_JOB_FAILURE  POST /projects/1/notifications -> NotificationsController#create
+      NotifyOwnerJob discard: Postbox::Rejected "recipient owner-580e1f@example.test rejected" (raised at app/services/postbox.rb:10)
+      why: a background job failed and was discarded quietly
+      asserted: redirect to "/projects/1"; eq "Owner notified"
+
+PASS -- but: Owner notifications records a failed delivery when the provider rejects the owner  (spec/requests/notifications_spec.rb:13)
+  [HIGH] GREEN_JOB_FAILURE  POST /projects/1/notifications -> NotificationsController#create
+      NotifyOwnerJob discard: Postbox::Rejected "recipient owner-1587e7@example.test rejected" (raised at app/services/postbox.rb:10)
+      why: a background job failed and was discarded quietly
+      asserted: change `Delivery.where(status: "failed").count` by 1
+
+PASS -- but: Owner notifications records a failed delivery when delivery raises  (spec/requests/notifications_spec.rb:21)
+  [suppressed: the exception was injected by a test double (and_raise)] GREEN_JOB_FAILURE  POST /projects/1/notifications -> NotificationsController#create
+      NotifyOwnerJob discard: Postbox::Rejected "bounced" (raised at app/jobs/notify_owner_job.rb:9)
+      why: a background job failed and was discarded quietly
+      asserted: change `Delivery.where(status: "failed").count` by 1
+
+PASS -- but: Profile updates the user's name  (spec/requests/profile_spec.rb:4)
+  [MEDIUM] GREEN_NO_MUTATION  PATCH /profile -> ProfilesController#update
+      PATCH /profile -> 302 -> / (flash notice: "Profile updated"); 0 rows written
+      strong parameters dropped: name
+      description says "updates" (low-confidence hint)
+      why: a mutating request wrote nothing and the example asserted no change
+      asserted: redirect to "/"; eq "Profile updated"
+
+PASS -- but: Projects GET /projects shows archived projects to admins  (spec/requests/projects_spec.rb:15)
+  [LOW] HINT_ACTOR_MISMATCH  GET /projects -> ProjectsController#index
+      description mentions admin; request ran as User#3 (role=member)
+      why: low-confidence: from the description
+      asserted: be successful; include "Projects"
+
+PASS -- but: Projects GET /projects/:id renders the project page  (spec/requests/projects_spec.rb:34)
+  [HIGH] GREEN_ERROR_TEMPLATE  GET /projects/1 -> ProjectsController#show
+      ProjectsController#show rendered shared/not_found.html.erb with 200
+      why: an error/fallback template was served with a success status; the example asserted only: be successful; include "Projects"
+      asserted: be successful; include "Projects"
+
+PASS -- but: Projects GET /projects/:id tells other users the project does not exist  (spec/requests/projects_spec.rb:41)
+  [suppressed: the example asserted text from shared/not_found.html.erb] GREEN_ERROR_TEMPLATE  GET /projects/1 -> ProjectsController#show
+      ProjectsController#show rendered shared/not_found.html.erb with 200
+      why: an error/fallback template was served with a success status; the example asserted only: include "Project not found"
+      asserted: include "Project not found"
+
+PASS -- but: Projects GET /projects/:id/summary shows the project summary  (spec/requests/projects_spec.rb:49)
+  [HIGH] GREEN_SWALLOWED_EXCEPTION  GET /projects/1/summary -> ProjectsController#summary
+      NoMethodError "undefined method `months_remaining' for an instance of Project" raised at app/services/budget_forecast.rb:10
+      rescued at app/controllers/projects_controller.rb:39 and not re-raised; the app logged it as an error
+      response: 200
+      why: application code swallowed an exception during a passing example
+      asserted: be successful; include "Apollo"
+
+PASS -- but: Projects GET /projects/:id/summary returns 404 when another user requests the summary  (spec/requests/projects_spec.rb:56)
+  [LOW] GREEN_NO_CONTROLLER
+      GET /projects/1/sumary (spec/requests/projects_spec.rb:58) reached no controller; answered 404
+      logged: ActionController::RoutingError (No route matches [GET] "/projects/1/sumary"):
+      why: the status came from routing/middleware, not from application code
+      asserted: respond with a not_found status code (404)
+
+PASS -- but: Projects PATCH /projects/:id redirects after updating the project  (spec/requests/projects_spec.rb:80)
+  [MEDIUM] GREEN_SETUP_REQUEST_FAILED  POST /session -> SessionsController#create
+      setup request from spec/support/sign_in_helper.rb:6 (body) returned 401
+      why: later requests in this example ran without the state this setup was meant to create
+  [HIGH] GREEN_AUTH_HALT  PATCH /projects/1 -> ProjectsController#update
+      before_action :authenticate_user! halted the request (authentication); ProjectsController#update never ran
+      response: 302 -> /login; actor: anonymous
+      an earlier request in this example signed in / set up a user
+      why: the example passed without the action under test executing
+      asserted: respond with a redirect status code (3xx)
+
+PASS -- but: Projects PATCH /projects/:id sends anonymous visitors to the login page  (spec/requests/projects_spec.rb:87)
+  [suppressed: the example asserted redirect_to /login] GREEN_AUTH_HALT  PATCH /projects/1 -> ProjectsController#update
+      before_action :authenticate_user! halted the request (authentication); ProjectsController#update never ran
+      response: 302 -> /login; actor: anonymous
+      lowered: the description says "anonymous"
+      why: the example passed without the action under test executing
+      asserted: redirect to "/login"
+
+PASS -- but: Reports shows the report  (spec/requests/reports_spec.rb:9)
+  [HIGH] GREEN_RESCUED_EXCEPTION  GET /projects/1/report -> ReportsController#show
+      NoMethodError "undefined method `latest_invoice' for an instance of Project" raised at app/services/report_builder.rb:12
+      handled by rescue_from StandardError => render_generic_error; response: 200; rendered errors/generic.html.erb
+      why: an exception was converted into an ordinary response; the example asserted only: be successful
+  [HIGH] GREEN_ERROR_TEMPLATE  GET /projects/1/report -> ReportsController#show
+      ReportsController#show rendered errors/generic.html.erb with 200
+      why: an error/fallback template was served with a success status; the example asserted only: be successful
+      asserted: be successful
+
+PASS -- but: Reports shows a friendly page when the report cannot be built  (spec/requests/reports_spec.rb:14)
+  [suppressed: the exception was injected by a test double (and_raise)] GREEN_RESCUED_EXCEPTION  GET /projects/1/report -> ReportsController#show
+      ReportBuilder::Unavailable "ReportBuilder::Unavailable" raised at app/controllers/reports_controller.rb:6
+      handled by rescue_from StandardError => render_generic_error; response: 200; rendered errors/generic.html.erb
+      why: an exception was converted into an ordinary response; the example asserted only: include "Something went wrong"
+  [suppressed: the example asserted text from errors/generic.html.erb] GREEN_ERROR_TEMPLATE  GET /projects/1/report -> ReportsController#show
+      ReportsController#show rendered errors/generic.html.erb with 200
+      why: an error/fallback template was served with a success status; the example asserted only: include "Something went wrong"
+      asserted: include "Something went wrong"
+
+PASS -- but: Unknown pages returns 404 for paths the app does not serve  (spec/requests/routing_spec.rb:4)
+  [LOW] GREEN_NO_CONTROLLER
+      GET /wp-login.php (spec/requests/routing_spec.rb:5) reached no controller; answered 404
+      logged: ActionController::RoutingError (No route matches [GET] "/wp-login.php"):
+      why: the status came from routing/middleware, not from application code
+      asserted: respond with a not_found status code (404)
+
+PASS -- but: Sessions signs in a known user  (spec/requests/sessions_spec.rb:4)
+  [LOW] GREEN_NO_MUTATION  POST /session -> SessionsController#create
+      POST /session -> 302 -> /projects; 0 rows written
+      why: a mutating request wrote nothing and the example asserted no change
+      asserted: redirect to "/projects"
+
+PASS -- but: Sessions signs out  (spec/requests/sessions_spec.rb:10)
+  [LOW] GREEN_NO_MUTATION  DELETE /session -> SessionsController#destroy
+      DELETE /session -> 302 -> /login; 0 rows written
+      why: a mutating request wrote nothing and the example asserted no change
+      asserted: redirect to "/login"
+
+PASS -- but: Status page shows the regional status banner  (spec/requests/status_spec.rb:4)
+  [HIGH] GREEN_EXCEPTION_PAGE  GET /status -> StatusController#show
+      GET /status (spec/requests/status_spec.rb:5) answered 400 with Rails' exception page ("Action Controller: Exception caught")
+      1 passing body assertion(s) ran against that page: include "All systems operational"
+      1 of them match only inside the page's printed source code, not anything the application rendered
+      exception: ActionController::ParameterMissing "param is missing or the value is empty or invalid: region" at app/controllers/status_controller.rb:7
+      why: the example's content assertions were checked against an error page, not the page under test
+      asserted: include "All systems operational"
+
+## Summary
+
+| | count |
+|---|---:|
+| examples observed | 37 |
+| passed | 37 |
+| passed examples with a shown finding (MEDIUM+) | 13 (35.1%) |
+| shown findings (MEDIUM+) | 15 |
+| LOW hints (not shown) | 7 |
+| suppressed by assertion context | 10 |
+
+| rule | HIGH | MEDIUM | LOW | suppressed |
+|---|---:|---:|---:|---:|
+| GREEN_AUTH_HALT | 1 | 1 | 0 | 2 |
+| GREEN_ERROR_PAYLOAD | 1 | 0 | 0 | 1 |
+| GREEN_ERROR_TEMPLATE | 2 | 0 | 0 | 2 |
+| GREEN_EXCEPTION_PAGE | 1 | 0 | 0 | 0 |
+| GREEN_JOB_FAILURE | 2 | 0 | 0 | 1 |
+| GREEN_NO_ASSERTIONS | 0 | 1 | 0 | 0 |
+| GREEN_NO_CONTROLLER | 0 | 0 | 2 | 0 |
+| GREEN_NO_MUTATION | 0 | 1 | 3 | 0 |
+| GREEN_RESCUED_EXCEPTION | 1 | 0 | 0 | 2 |
+| GREEN_ROLLBACK | 1 | 0 | 0 | 1 |
+| GREEN_SETUP_REQUEST_FAILED | 0 | 1 | 0 | 0 |
+| GREEN_SWALLOWED_EXCEPTION | 1 | 0 | 1 | 1 |
+| GREEN_THREAD_DIED | 1 | 0 | 0 | 0 |
+| HINT_ACTOR_MISMATCH | 0 | 0 | 1 | 0 |
+
+## Scoring against ground truth
+
+| case | kind | shown (MEDIUM+) | LOW hints | suppressed | verdict |
+|---|---|---|---|---|---|
+| 1 wrong redirect | bad | GREEN_SETUP_REQUEST_FAILED, GREEN_AUTH_HALT | - | - | DETECTED |
+| 10 thread error | bad | GREEN_THREAD_DIED | GREEN_NO_MUTATION | - | DETECTED |
+| 11 wrong route | bad | - | GREEN_NO_CONTROLLER | - | LOW hint only |
+| 12 no assertions | bad | GREEN_NO_ASSERTIONS | - | - | DETECTED |
+| 13 swallowed inline error | bad | GREEN_SWALLOWED_EXCEPTION | - | - | DETECTED |
+| 14 self-satisfying assertion | bad | GREEN_EXCEPTION_PAGE | - | - | DETECTED |
+| 2 rescued exception | bad | GREEN_RESCUED_EXCEPTION, GREEN_ERROR_TEMPLATE | - | - | DETECTED |
+| 3 API error with 200 | bad | GREEN_ERROR_PAYLOAD | - | - | DETECTED |
+| 4 authorization never reached | bad | GREEN_AUTH_HALT | - | - | DETECTED |
+| 5 wrong actor | bad | - | HINT_ACTOR_MISMATCH | - | LOW hint only |
+| 6 rollback | bad | GREEN_ROLLBACK | GREEN_SWALLOWED_EXCEPTION | - | DETECTED |
+| 7 zero mutation | bad | GREEN_NO_MUTATION | - | - | DETECTED |
+| 8 unexpected template | bad | GREEN_ERROR_TEMPLATE | - | - | DETECTED |
+| 9 swallowed job error | bad | GREEN_JOB_FAILURE | - | - | DETECTED |
+| C1 intended auth redirect | control | - | - | GREEN_AUTH_HALT | quiet |
+| C10 intended thread error | control | - | - | - | quiet |
+| C11 intended routing 404 | control | - | GREEN_NO_CONTROLLER | - | quiet |
+| C12 intended 401 | control | - | - | - | quiet |
+| C13 intended 400 | control | - | - | - | quiet |
+| C2 intended error JSON | control | - | - | GREEN_ERROR_PAYLOAD | quiet |
+| C3 intended rollback | control | - | - | GREEN_SWALLOWED_EXCEPTION, GREEN_ROLLBACK | quiet |
+| C4 intended rescue | control | - | - | GREEN_RESCUED_EXCEPTION, GREEN_ERROR_TEMPLATE | quiet |
+| C5 intended authorization halt | control | - | - | GREEN_AUTH_HALT | quiet |
+| C6 intended RecordNotFound -> 404 | control | - | - | GREEN_RESCUED_EXCEPTION | quiet |
+| C7 intended job failure (real) | control | GREEN_JOB_FAILURE | - | - | FALSE POSITIVE |
+| C7b intended job failure (double) | control | - | - | GREEN_JOB_FAILURE | quiet |
+| C8 intended no-op update | control | - | - | - | quiet |
+| C9 intended not-found template | control | - | - | GREEN_ERROR_TEMPLATE | quiet |
+| Admin projects lets admins archive projects | clean | - | - | - | quiet |
+| API projects returns the project to its owner | clean | - | - | - | quiet |
+| Projects GET /projects lists visible projects | clean | - | - | - | quiet |
+| Projects GET /projects/:id shows the owner's project | clean | - | - | - | quiet |
+| Projects POST /projects creates a project | clean | - | - | - | quiet |
+| Projects PATCH /projects/:id updates the project name | clean | - | - | - | quiet |
+| Sessions signs in a known user | clean | - | GREEN_NO_MUTATION | - | quiet |
+| Sessions signs out | clean | - | GREEN_NO_MUTATION | - | quiet |
+| Status page shows the banner for a region | clean | - | - | - | quiet |
+
+bad: 12/14 flagged at MEDIUM+, 12/14 by the expected rule
+control: 1/14 with a shown finding (false positives)
+clean: 0/9 with a shown finding (false positives)

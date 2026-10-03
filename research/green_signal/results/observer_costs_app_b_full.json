@@ -1,0 +1,14 @@
+{
+  "costs_ms": {
+    "sql": 2272.4,
+    "tracepoint": 62.4,
+    "expectation": 1011.9,
+    "serialize": 116.6,
+    "controller": 421.9,
+    "render": 23.2,
+    "issue": 90.1,
+    "job": 1.8
+  },
+  "counts": {},
+  "examples": 1869
+}

@@ -1,0 +1,187 @@
+[
+  {
+    "case": "F01",
+    "id": "./spec/requests/admin_projects_spec.rb[1:1]",
+    "description": "Admin projects does not let members archive projects"
+  },
+  {
+    "case": "F02",
+    "id": "./spec/requests/admin_projects_spec.rb[1:2]",
+    "description": "Admin projects redirects members away from archiving"
+  },
+  {
+    "case": "F03",
+    "id": "./spec/requests/admin_projects_spec.rb[1:3]",
+    "description": "Admin projects lets admins archive projects"
+  },
+  {
+    "case": "F04",
+    "id": "./spec/requests/admin_projects_spec.rb[1:4]",
+    "description": "Admin projects archives a project and records an audit entry"
+  },
+  {
+    "case": "F05",
+    "id": "./spec/requests/api_projects_spec.rb[1:1]",
+    "description": "API projects returns the project"
+  },
+  {
+    "case": "F06",
+    "id": "./spec/requests/api_projects_spec.rb[1:2]",
+    "description": "API projects refuses non-owners with an error object"
+  },
+  {
+    "case": "F07",
+    "id": "./spec/requests/api_projects_spec.rb[1:3]",
+    "description": "API projects returns the project to its owner"
+  },
+  {
+    "case": "F08",
+    "id": "./spec/requests/archived_projects_spec.rb[1:1]",
+    "description": "Archived projects returns 404 for a project that is not archived"
+  },
+  {
+    "case": "F09",
+    "id": "./spec/requests/exports_spec.rb[1:1]",
+    "description": "Exports starts an export"
+  },
+  {
+    "case": "F10",
+    "id": "./spec/requests/imports_spec.rb[1:1]",
+    "description": "Imports imports the uploaded rows"
+  },
+  {
+    "case": "F11",
+    "id": "./spec/requests/imports_spec.rb[1:2]",
+    "description": "Imports imports nothing when one row is invalid"
+  },
+  {
+    "case": "F12",
+    "id": "./spec/requests/notifications_spec.rb[1:1]",
+    "description": "Owner notifications notifies the owner"
+  },
+  {
+    "case": "F13",
+    "id": "./spec/requests/notifications_spec.rb[1:2]",
+    "description": "Owner notifications records a failed delivery when the provider rejects the owner"
+  },
+  {
+    "case": "F14",
+    "id": "./spec/requests/notifications_spec.rb[1:3]",
+    "description": "Owner notifications records a failed delivery when delivery raises"
+  },
+  {
+    "case": "F15",
+    "id": "./spec/requests/profile_spec.rb[1:1]",
+    "description": "Profile updates the user's name"
+  },
+  {
+    "case": "F16",
+    "id": "./spec/requests/projects_spec.rb[1:1:1]",
+    "description": "Projects GET /projects lists visible projects"
+  },
+  {
+    "case": "F17",
+    "id": "./spec/requests/projects_spec.rb[1:1:2]",
+    "description": "Projects GET /projects shows archived projects to admins"
+  },
+  {
+    "case": "F18",
+    "id": "./spec/requests/projects_spec.rb[1:2:1]",
+    "description": "Projects GET /projects/:id shows the owner's project"
+  },
+  {
+    "case": "F19",
+    "id": "./spec/requests/projects_spec.rb[1:2:2]",
+    "description": "Projects GET /projects/:id renders the project page"
+  },
+  {
+    "case": "F20",
+    "id": "./spec/requests/projects_spec.rb[1:2:3]",
+    "description": "Projects GET /projects/:id tells other users the project does not exist"
+  },
+  {
+    "case": "F21",
+    "id": "./spec/requests/projects_spec.rb[1:3:1]",
+    "description": "Projects GET /projects/:id/summary shows the project summary"
+  },
+  {
+    "case": "F22",
+    "id": "./spec/requests/projects_spec.rb[1:3:2]",
+    "description": "Projects GET /projects/:id/summary returns 404 when another user requests the summary"
+  },
+  {
+    "case": "F23",
+    "id": "./spec/requests/projects_spec.rb[1:4:1]",
+    "description": "Projects POST /projects creates a project"
+  },
+  {
+    "case": "F24",
+    "id": "./spec/requests/projects_spec.rb[1:5:1]",
+    "description": "Projects PATCH /projects/:id updates the project name"
+  },
+  {
+    "case": "F25",
+    "id": "./spec/requests/projects_spec.rb[1:5:2]",
+    "description": "Projects PATCH /projects/:id redirects after updating the project"
+  },
+  {
+    "case": "F26",
+    "id": "./spec/requests/projects_spec.rb[1:5:3]",
+    "description": "Projects PATCH /projects/:id sends anonymous visitors to the login page"
+  },
+  {
+    "case": "F27",
+    "id": "./spec/requests/projects_spec.rb[1:5:4]",
+    "description": "Projects PATCH /projects/:id leaves the project untouched when nothing changed"
+  },
+  {
+    "case": "F28",
+    "id": "./spec/requests/reports_spec.rb[1:1]",
+    "description": "Reports shows the report"
+  },
+  {
+    "case": "F29",
+    "id": "./spec/requests/reports_spec.rb[1:2]",
+    "description": "Reports shows a friendly page when the report cannot be built"
+  },
+  {
+    "case": "F30",
+    "id": "./spec/requests/routing_spec.rb[1:1]",
+    "description": "Unknown pages returns 404 for paths the app does not serve"
+  },
+  {
+    "case": "F31",
+    "id": "./spec/requests/sessions_spec.rb[1:1]",
+    "description": "Sessions signs in a known user"
+  },
+  {
+    "case": "F32",
+    "id": "./spec/requests/sessions_spec.rb[1:2]",
+    "description": "Sessions signs out"
+  },
+  {
+    "case": "F33",
+    "id": "./spec/requests/sessions_spec.rb[1:3]",
+    "description": "Sessions rejects unknown emails"
+  },
+  {
+    "case": "F34",
+    "id": "./spec/requests/status_spec.rb[1:1]",
+    "description": "Status page shows the regional status banner"
+  },
+  {
+    "case": "F35",
+    "id": "./spec/requests/status_spec.rb[1:2]",
+    "description": "Status page shows the banner for a region"
+  },
+  {
+    "case": "F36",
+    "id": "./spec/requests/status_spec.rb[1:3]",
+    "description": "Status page rejects a request without a region"
+  },
+  {
+    "case": "F37",
+    "id": "./spec/services/export_builder_spec.rb[1:1]",
+    "description": "ExportBuilder fails loudly when its thread is joined"
+  }
+]

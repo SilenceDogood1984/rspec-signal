@@ -1,0 +1,47 @@
+[
+  {
+    "case": "H01",
+    "id": "./spec/requests/requests_requests_spec.rb[1:1:2:9:1]",
+    "description": "Requests When signed GET #show when the request has a Fulfilled status does not display the Cancel button"
+  },
+  {
+    "case": "H02",
+    "id": "./spec/requests/organization_requests_spec.rb[1:2:1:4]",
+    "description": "Organizations While signed in as an organization admin GET #show can see 'Promote to User' button for users"
+  },
+  {
+    "case": "H03",
+    "id": "./spec/requests/partners_requests_spec.rb[1:13:2:1]",
+    "description": "Partners PUT #reactivate when trying to reactivate a partner who is not deactivated  fails to change the partner status to reactivated and redirects with flash error message"
+  },
+  {
+    "case": "H04",
+    "id": "./spec/requests/admin/organizations_requests_spec.rb[1:2:2:1]",
+    "description": "Admin::Organizations When logged in as a non-admin user POST #create redirects"
+  },
+  {
+    "case": "H05",
+    "id": "./spec/requests/admin/organizations_requests_spec.rb[1:2:3:1]",
+    "description": "Admin::Organizations When logged in as a non-admin user GET #index redirects"
+  },
+  {
+    "case": "H06",
+    "id": "./spec/requests/admin/organizations_requests_spec.rb[1:2:1:1]",
+    "description": "Admin::Organizations When logged in as a non-admin user GET #new redirects"
+  },
+  {
+    "case": "H07",
+    "id": "./spec/controllers/items_controller_spec.rb[1:1:7:3:1]",
+    "description": "ItemsController While signed in PATCH #restore with another organizations item does nothing"
+  },
+  {
+    "case": "H08",
+    "id": "./spec/requests/partners/requests_spec.rb[1:3:2]",
+    "description": "/partners/requests GET #show should give a 404 error if not found"
+  },
+  {
+    "case": "H09",
+    "id": "./spec/requests/partners/requests_spec.rb[1:3:3]",
+    "description": "/partners/requests GET #show should give a 404 error if forbidden"
+  }
+]

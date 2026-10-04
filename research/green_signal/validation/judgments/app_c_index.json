@@ -1,0 +1,827 @@
+[
+  {
+    "case": "C01",
+    "id": "./spec/controllers/admin/users_controller_spec.rb[1:3:3]",
+    "description": "Admin::UsersController GET edit reloads current page with the flash message if user got deleted"
+  },
+  {
+    "case": "C02",
+    "id": "./spec/controllers/admin/users_controller_spec.rb[1:4:1:2]",
+    "description": "Admin::UsersController PUT update with valid params reloads current page is the user got deleted"
+  },
+  {
+    "case": "C03",
+    "id": "./spec/controllers/admin/users_controller_spec.rb[1:5:2]",
+    "description": "Admin::UsersController GET confirm reloads current page is the user got deleted"
+  },
+  {
+    "case": "C04",
+    "id": "./spec/controllers/admin/users_controller_spec.rb[1:7:1:2]",
+    "description": "Admin::UsersController POST auto_complete it should behave like auto complete should save current autocomplete controller in a session"
+  },
+  {
+    "case": "C05",
+    "id": "./spec/controllers/admin/users_controller_spec.rb[1:8:3]",
+    "description": "Admin::UsersController PUT suspend reloads current page is the user got deleted"
+  },
+  {
+    "case": "C06",
+    "id": "./spec/controllers/admin/users_controller_spec.rb[1:9:2]",
+    "description": "Admin::UsersController PUT reactivate reloads current page is the user got deleted"
+  },
+  {
+    "case": "C07",
+    "id": "./spec/controllers/comments_controller_spec.rb[1:1:5:2]",
+    "description": "CommentsController responding to GET index (JSON) JSON: should return 404 (Not Found) JSON error if the asset is not found"
+  },
+  {
+    "case": "C08",
+    "id": "./spec/controllers/emails_controller_spec.rb[1:1:1:2:1]",
+    "description": "EmailsController responding to DELETE destroy AJAX request when unauthorized should destroy the requested email and render [destroy] template"
+  },
+  {
+    "case": "C09",
+    "id": "./spec/controllers/emails_controller_spec.rb[1:1:1:2:2]",
+    "description": "EmailsController responding to DELETE destroy AJAX request when unauthorized should destroy the requested email and render [destroy] template"
+  },
+  {
+    "case": "C10",
+    "id": "./spec/controllers/emails_controller_spec.rb[1:1:1:2:3]",
+    "description": "EmailsController responding to DELETE destroy AJAX request when unauthorized should destroy the requested email and render [destroy] template"
+  },
+  {
+    "case": "C11",
+    "id": "./spec/controllers/emails_controller_spec.rb[1:1:1:2:4]",
+    "description": "EmailsController responding to DELETE destroy AJAX request when unauthorized should destroy the requested email and render [destroy] template"
+  },
+  {
+    "case": "C12",
+    "id": "./spec/controllers/emails_controller_spec.rb[1:1:1:2:5]",
+    "description": "EmailsController responding to DELETE destroy AJAX request when unauthorized should destroy the requested email and render [destroy] template"
+  },
+  {
+    "case": "C13",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:1:5:3]",
+    "description": "AccountsController responding to GET index AJAX pagination should reset current_page when query is altered"
+  },
+  {
+    "case": "C14",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:2:4:3]",
+    "description": "AccountsController responding to GET show account got deleted or otherwise unavailable should return 404 (Not Found) JSON error"
+  },
+  {
+    "case": "C15",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:2:4:4]",
+    "description": "AccountsController responding to GET show account got deleted or otherwise unavailable should return 404 (Not Found) XML error"
+  },
+  {
+    "case": "C16",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:4:3:1]",
+    "description": "AccountsController responding to GET edit (account got deleted or is otherwise unavailable) should reload current page with the flash message if the account got deleted"
+  },
+  {
+    "case": "C17",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:4:3:2]",
+    "description": "AccountsController responding to GET edit (account got deleted or is otherwise unavailable) should reload current page with the flash message if the account is protected"
+  },
+  {
+    "case": "C18",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:6:1:4:1]",
+    "description": "AccountsController responding to PUT update with valid params account got deleted or otherwise unavailable should reload current page is the account got deleted"
+  },
+  {
+    "case": "C19",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:6:1:4:2]",
+    "description": "AccountsController responding to PUT update with valid params account got deleted or otherwise unavailable should reload current page with the flash message if the account is protected"
+  },
+  {
+    "case": "C20",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:7:1:5:1]",
+    "description": "AccountsController responding to DELETE destroy AJAX request account got deleted or otherwise unavailable should reload current page is the account got deleted"
+  },
+  {
+    "case": "C21",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:7:1:5:2]",
+    "description": "AccountsController responding to DELETE destroy AJAX request account got deleted or otherwise unavailable should reload current page with the flash message if the account is protected"
+  },
+  {
+    "case": "C22",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:7:2:2]",
+    "description": "AccountsController responding to DELETE destroy HTML request should redirect to account index with the flash message is the account got deleted"
+  },
+  {
+    "case": "C23",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:8:1:1:3]",
+    "description": "AccountsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C24",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:8:1:1:4]",
+    "description": "AccountsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C25",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:8:2:1:3]",
+    "description": "AccountsController responding to PUT attach contacts it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C26",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:8:2:1:4]",
+    "description": "AccountsController responding to PUT attach contacts it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C27",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:9:1:1:2]",
+    "description": "AccountsController responding to POST discard tasks it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C28",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:9:1:1:3]",
+    "description": "AccountsController responding to POST discard tasks it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C29",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:9:2:1:2]",
+    "description": "AccountsController responding to POST discard contacts it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C30",
+    "id": "./spec/controllers/entities/accounts_controller_spec.rb[1:9:2:1:3]",
+    "description": "AccountsController responding to POST discard contacts it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C31",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:2:4:3]",
+    "description": "CampaignsController responding to GET show campaign got deleted or otherwise unavailable should return 404 (Not Found) JSON error"
+  },
+  {
+    "case": "C32",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:2:4:4]",
+    "description": "CampaignsController responding to GET show campaign got deleted or otherwise unavailable should return 404 (Not Found) XML error"
+  },
+  {
+    "case": "C33",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:4:3:1]",
+    "description": "CampaignsController responding to GET edit (campaign got deleted or is otherwise unavailable) should reload current page with the flash message if the campaign got deleted"
+  },
+  {
+    "case": "C34",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:4:3:2]",
+    "description": "CampaignsController responding to GET edit (campaign got deleted or is otherwise unavailable) should reload current page with the flash message if the campaign is protected"
+  },
+  {
+    "case": "C35",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:6:1:4:1]",
+    "description": "CampaignsController responding to PUT update with valid params campaign got deleted or otherwise unavailable should reload current page with the flash message if the campaign got deleted"
+  },
+  {
+    "case": "C36",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:6:1:4:2]",
+    "description": "CampaignsController responding to PUT update with valid params campaign got deleted or otherwise unavailable should reload current page with the flash message if the campaign is protected"
+  },
+  {
+    "case": "C37",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:7:1:5:1]",
+    "description": "CampaignsController responding to DELETE destroy AJAX request campaign got deleted or otherwise unavailable should reload current page with the flash message if the campaign got deleted"
+  },
+  {
+    "case": "C38",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:7:1:5:2]",
+    "description": "CampaignsController responding to DELETE destroy AJAX request campaign got deleted or otherwise unavailable should reload current page with the flash message if the campaign is protected"
+  },
+  {
+    "case": "C39",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:8:1:1:3]",
+    "description": "CampaignsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C40",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:8:1:1:4]",
+    "description": "CampaignsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C41",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:8:2:1:3]",
+    "description": "CampaignsController responding to PUT attach leads it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C42",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:8:2:1:4]",
+    "description": "CampaignsController responding to PUT attach leads it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C43",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:8:3:1:3]",
+    "description": "CampaignsController responding to PUT attach opportunities it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C44",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:8:3:1:4]",
+    "description": "CampaignsController responding to PUT attach opportunities it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C45",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:9:1:1:3]",
+    "description": "CampaignsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C46",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:9:1:1:4]",
+    "description": "CampaignsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C47",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:9:2:1:3]",
+    "description": "CampaignsController responding to PUT attach leads it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C48",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:9:2:1:4]",
+    "description": "CampaignsController responding to PUT attach leads it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C49",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:9:3:1:3]",
+    "description": "CampaignsController responding to PUT attach opportunities it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C50",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:9:3:1:4]",
+    "description": "CampaignsController responding to PUT attach opportunities it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C51",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:10:1:1:2]",
+    "description": "CampaignsController responding to POST discard tasks it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C52",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:10:1:1:3]",
+    "description": "CampaignsController responding to POST discard tasks it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C53",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:10:2:1:2]",
+    "description": "CampaignsController responding to POST discard leads it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C54",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:10:2:1:3]",
+    "description": "CampaignsController responding to POST discard leads it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C55",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:10:3:1:2]",
+    "description": "CampaignsController responding to POST discard opportunities it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C56",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:10:3:1:3]",
+    "description": "CampaignsController responding to POST discard opportunities it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C57",
+    "id": "./spec/controllers/entities/campaigns_controller_spec.rb[1:13:2]",
+    "description": "CampaignsController responding to POST filter should reset current page to 1"
+  },
+  {
+    "case": "C58",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:2:4:3]",
+    "description": "ContactsController responding to GET show contact got deleted or otherwise unavailable should return 404 (Not Found) XML error"
+  },
+  {
+    "case": "C59",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:4:1:1]",
+    "description": "ContactsController responding to GET field_group with an existing tag should return with an existing tag name"
+  },
+  {
+    "case": "C60",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:5:4:1]",
+    "description": "ContactsController responding to GET edit (contact got deleted or is otherwise unavailable) should reload current page with the flash message if the contact got deleted"
+  },
+  {
+    "case": "C61",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:5:4:2]",
+    "description": "ContactsController responding to GET edit (contact got deleted or is otherwise unavailable) should reload current page with the flash message if the contact is protected"
+  },
+  {
+    "case": "C62",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:7:1:5:1]",
+    "description": "ContactsController responding to PUT update with valid params contact got deleted or otherwise unavailable should reload current page is the contact got deleted"
+  },
+  {
+    "case": "C63",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:7:1:5:2]",
+    "description": "ContactsController responding to PUT update with valid params contact got deleted or otherwise unavailable should reload current page with the flash message if the contact is protected"
+  },
+  {
+    "case": "C64",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:8:1:4:1]",
+    "description": "ContactsController responding to DELETE destroy AJAX request contact got deleted or otherwise unavailable should reload current page is the contact got deleted"
+  },
+  {
+    "case": "C65",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:8:1:4:2]",
+    "description": "ContactsController responding to DELETE destroy AJAX request contact got deleted or otherwise unavailable should reload current page with the flash message if the contact is protected"
+  },
+  {
+    "case": "C66",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:9:1:1:3]",
+    "description": "ContactsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C67",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:9:1:1:4]",
+    "description": "ContactsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C68",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:9:2:1:3]",
+    "description": "ContactsController responding to PUT attach opportunities it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C69",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:9:2:1:4]",
+    "description": "ContactsController responding to PUT attach opportunities it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C70",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:10:1:1:3]",
+    "description": "ContactsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C71",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:10:1:1:4]",
+    "description": "ContactsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C72",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:10:2:1:3]",
+    "description": "ContactsController responding to PUT attach opportunities it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C73",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:10:2:1:4]",
+    "description": "ContactsController responding to PUT attach opportunities it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C74",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:11:1:1:2]",
+    "description": "ContactsController responding to POST discard tasks it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C75",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:11:1:1:3]",
+    "description": "ContactsController responding to POST discard tasks it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C76",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:11:2:1:2]",
+    "description": "ContactsController responding to POST discard opportunities it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C77",
+    "id": "./spec/controllers/entities/contacts_controller_spec.rb[1:11:2:1:3]",
+    "description": "ContactsController responding to POST discard opportunities it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C78",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:1:5:1]",
+    "description": "LeadsController responding to GET index AJAX pagination should pick up page number from params"
+  },
+  {
+    "case": "C79",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:2:4:3]",
+    "description": "LeadsController responding to GET show lead got deleted or otherwise unavailable should return 404 (Not Found) JSON error"
+  },
+  {
+    "case": "C80",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:2:4:4]",
+    "description": "LeadsController responding to GET show lead got deleted or otherwise unavailable should return 404 (Not Found) XML error"
+  },
+  {
+    "case": "C81",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:4:3:1]",
+    "description": "LeadsController responding to GET edit lead got deleted or is otherwise unavailable should reload current page with the flash message if the lead got deleted"
+  },
+  {
+    "case": "C82",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:4:3:2]",
+    "description": "LeadsController responding to GET edit lead got deleted or is otherwise unavailable should reload current page with the flash message if the lead is protected"
+  },
+  {
+    "case": "C83",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:5:1:1]",
+    "description": "LeadsController responding to POST create with valid params should expose a newly created lead as @lead and render [create] template"
+  },
+  {
+    "case": "C84",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:6:1:11:1]",
+    "description": "LeadsController responding to PUT update with valid params lead got deleted or otherwise unavailable should reload current page with the flash message if the lead got deleted"
+  },
+  {
+    "case": "C85",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:6:1:11:2]",
+    "description": "LeadsController responding to PUT update with valid params lead got deleted or otherwise unavailable should reload current page with the flash message if the lead is protected"
+  },
+  {
+    "case": "C86",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:7:1:4:1]",
+    "description": "LeadsController responding to DELETE destroy AJAX request lead got deleted or otherwise unavailable should reload current page with the flash message if the lead got deleted"
+  },
+  {
+    "case": "C87",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:7:1:4:2]",
+    "description": "LeadsController responding to DELETE destroy AJAX request lead got deleted or otherwise unavailable should reload current page with the flash message if the lead is protected"
+  },
+  {
+    "case": "C88",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:8:2:1]",
+    "description": "LeadsController responding to GET convert (lead got deleted or is otherwise unavailable) should reload current page with the flash message if the lead got deleted"
+  },
+  {
+    "case": "C89",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:8:2:2]",
+    "description": "LeadsController responding to GET convert (lead got deleted or is otherwise unavailable) should reload current page with the flash message if the lead is protected"
+  },
+  {
+    "case": "C90",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:9:2]",
+    "description": "LeadsController responding to PUT promote should copy lead permissions to newly created account and opportunity when asked so"
+  },
+  {
+    "case": "C91",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:9:8:1]",
+    "description": "LeadsController responding to PUT promote lead got deleted or otherwise unavailable should reload current page with the flash message if the lead got deleted"
+  },
+  {
+    "case": "C92",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:9:8:2]",
+    "description": "LeadsController responding to PUT promote lead got deleted or otherwise unavailable should reload current page with the flash message if the lead is protected"
+  },
+  {
+    "case": "C93",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:10:1:4:1]",
+    "description": "LeadsController responding to PUT reject AJAX request lead got deleted or otherwise unavailable should reload current page with the flash message if the lead got deleted"
+  },
+  {
+    "case": "C94",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:10:1:4:2]",
+    "description": "LeadsController responding to PUT reject AJAX request lead got deleted or otherwise unavailable should reload current page with the flash message if the lead is protected"
+  },
+  {
+    "case": "C95",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:11:1:1:3]",
+    "description": "LeadsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C96",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:11:1:1:4]",
+    "description": "LeadsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C97",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:12:1:1:3]",
+    "description": "LeadsController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C98",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:12:1:1:4]",
+    "description": "LeadsController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C99",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:13:1:2]",
+    "description": "LeadsController responding to POST discard it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C100",
+    "id": "./spec/controllers/entities/leads_controller_spec.rb[1:13:1:3]",
+    "description": "LeadsController responding to POST discard it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C101",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:2:4:3]",
+    "description": "OpportunitiesController responding to GET show opportunity got deleted or otherwise unavailable should return 404 (Not Found) JSON error"
+  },
+  {
+    "case": "C102",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:2:4:4]",
+    "description": "OpportunitiesController responding to GET show opportunity got deleted or otherwise unavailable should return 404 (Not Found) XML error"
+  },
+  {
+    "case": "C103",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:3:1]",
+    "description": "OpportunitiesController responding to GET new should expose a new opportunity as @opportunity and render [new] template"
+  },
+  {
+    "case": "C104",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:4:3:1]",
+    "description": "OpportunitiesController responding to GET edit opportunity got deleted or is otherwise unavailable should reload current page with the flash message if the opportunity got deleted"
+  },
+  {
+    "case": "C105",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:4:3:2]",
+    "description": "OpportunitiesController responding to GET edit opportunity got deleted or is otherwise unavailable should reload current page with the flash message if the opportunity is protected"
+  },
+  {
+    "case": "C106",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:6:1:12:1]",
+    "description": "OpportunitiesController responding to PUT update with valid params opportunity got deleted or otherwise unavailable should reload current page with the flash message if the opportunity got deleted"
+  },
+  {
+    "case": "C107",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:6:1:12:2]",
+    "description": "OpportunitiesController responding to PUT update with valid params opportunity got deleted or otherwise unavailable should reload current page with the flash message if the opportunity is protected"
+  },
+  {
+    "case": "C108",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:7:1:3:3]",
+    "description": "OpportunitiesController responding to DELETE destroy AJAX request when called from related asset page should reload campaiign to be able to refresh its summary"
+  },
+  {
+    "case": "C109",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:7:1:4:1]",
+    "description": "OpportunitiesController responding to DELETE destroy AJAX request opportunity got deleted or otherwise unavailable should reload current page is the opportunity got deleted"
+  },
+  {
+    "case": "C110",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:7:1:4:2]",
+    "description": "OpportunitiesController responding to DELETE destroy AJAX request opportunity got deleted or otherwise unavailable should reload current page with the flash message if the opportunity is protected"
+  },
+  {
+    "case": "C111",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:8:1:1:3]",
+    "description": "OpportunitiesController responding to PUT attach tasks it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C112",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:8:1:1:4]",
+    "description": "OpportunitiesController responding to PUT attach tasks it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C113",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:8:2:1:3]",
+    "description": "OpportunitiesController responding to PUT attach contacts it should behave like attach should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C114",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:8:2:1:4]",
+    "description": "OpportunitiesController responding to PUT attach contacts it should behave like attach should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C115",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:9:1:1:2]",
+    "description": "OpportunitiesController responding to POST discard tasks it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C116",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:9:1:1:3]",
+    "description": "OpportunitiesController responding to POST discard tasks it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C117",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:9:2:1:2]",
+    "description": "OpportunitiesController responding to POST discard contacts it should behave like discard should display flash warning when the model is no longer available"
+  },
+  {
+    "case": "C118",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:9:2:1:3]",
+    "description": "OpportunitiesController responding to POST discard contacts it should behave like discard should display flash warning when the attachment is no longer available"
+  },
+  {
+    "case": "C119",
+    "id": "./spec/controllers/entities/opportunities_controller_spec.rb[1:10:1:3]",
+    "description": "OpportunitiesController responding to POST auto_complete it should behave like auto complete should render application/_auto_complete template"
+  },
+  {
+    "case": "C120",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:3:1]",
+    "description": "TasksController responding to GET versions should expose versions of the requested task"
+  },
+  {
+    "case": "C121",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:5:3:1]",
+    "description": "TasksController responding to GET edit (task got deleted or reassigned) should reload current page with the flash message if the task got deleted"
+  },
+  {
+    "case": "C122",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:5:3:2]",
+    "description": "TasksController responding to GET edit (task got deleted or reassigned) should reload current page with the flash message if the task got reassigned"
+  },
+  {
+    "case": "C123",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:6:1:5]",
+    "description": "TasksController responding to POST create with valid params should update tasks sidebar when [create] is being called from [/tasks?view=completed] page"
+  },
+  {
+    "case": "C124",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:7:3:1]",
+    "description": "TasksController responding to PUT update task got deleted or reassigned should reload current page with the flash message if the task got deleted"
+  },
+  {
+    "case": "C125",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:7:3:2]",
+    "description": "TasksController responding to PUT update task got deleted or reassigned should reload current page with the flash message if the task got reassigned"
+  },
+  {
+    "case": "C126",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:8:7:1]",
+    "description": "TasksController responding to DELETE destroy task got deleted or reassigned should reload current page with the flash message if the task got deleted"
+  },
+  {
+    "case": "C127",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:8:7:2]",
+    "description": "TasksController responding to DELETE destroy task got deleted or reassigned should reload current page with the flash message if the task got reassigned"
+  },
+  {
+    "case": "C128",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:9:4:1]",
+    "description": "TasksController responding to PUT complete task got deleted or reassigned should reload current page with the flash message if the task got deleted"
+  },
+  {
+    "case": "C129",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:9:4:2]",
+    "description": "TasksController responding to PUT complete task got deleted or reassigned should reload current page with the flash message if the task got reassigned"
+  },
+  {
+    "case": "C130",
+    "id": "./spec/controllers/tasks_controller_spec.rb[1:10:2:1]",
+    "description": "TasksController responding to PUT uncomplete task got deleted should reload current page with the flash message if the task got deleted"
+  },
+  {
+    "case": "C131",
+    "id": "./spec/controllers/users_controller_spec.rb[1:1:5:1]",
+    "description": "UsersController responding to GET show with mime type of JSON should render the requested user as JSON"
+  },
+  {
+    "case": "C132",
+    "id": "./spec/controllers/users_controller_spec.rb[1:2:2]",
+    "description": "UsersController responding to GET edit should not allow current user to edit another user"
+  },
+  {
+    "case": "C133",
+    "id": "./spec/controllers/users_controller_spec.rb[1:4:1]",
+    "description": "UsersController responding to DELETE destroy should destroy the requested user"
+  },
+  {
+    "case": "C134",
+    "id": "./spec/controllers/users_controller_spec.rb[1:4:2]",
+    "description": "UsersController responding to DELETE destroy should redirect to the users list"
+  },
+  {
+    "case": "C135",
+    "id": "./spec/features/dashboard_spec.rb[1:1]",
+    "description": "Dashboard \n  In order to monitor activity\n  As a user\n  I want to see a dashboard\n Viewing my dashboard"
+  },
+  {
+    "case": "C136",
+    "id": "./spec/features/leads_spec.rb[1:1]",
+    "description": "Leads \n  In order to increase sales\n  As a user\n  I want to manage leads\n should view a list of leads"
+  },
+  {
+    "case": "C137",
+    "id": "./spec/features/opportunities_overview_spec.rb[1:1]",
+    "description": "Opportunities Overview \n  In order to keep track of my team's responsibilities\n  As a user\n  I want to see an overview of opportunities broken down by user\n Accessing Opportunity Overview via the nav"
+  },
+  {
+    "case": "C138",
+    "id": "./spec/models/entities/account_spec.rb[1:7:1:12:1]",
+    "description": "Account permissions it should behave like Ability when shared access with several group permissions is expected to be able to manage #<Account:0x00007f8c440412d0>"
+  },
+  {
+    "case": "C139",
+    "id": "./spec/models/entities/contact_spec.rb[1:3:1]",
+    "description": "Contact Update existing contact should create new account if requested so"
+  },
+  {
+    "case": "C140",
+    "id": "./spec/models/entities/contact_spec.rb[1:7:1:11:1]",
+    "description": "Contact permissions it should behave like Ability when shared access with group permission is expected to be able to manage #<Contact:0x00007f8c23de9250>"
+  },
+  {
+    "case": "C141",
+    "id": "./spec/models/entities/lead_spec.rb[1:5:1:12:1]",
+    "description": "Lead permissions it should behave like Ability when shared access with several group permissions is expected to be able to manage #<Lead:0x00007f8c23e1b188>"
+  },
+  {
+    "case": "C142",
+    "id": "./spec/models/entities/opportunity_spec.rb[1:3]",
+    "description": "Opportunity have a default stage"
+  },
+  {
+    "case": "C143",
+    "id": "./spec/models/fields/custom_field_pair_spec.rb[1:1]",
+    "description": "CustomFieldPair should respond to pair"
+  },
+  {
+    "case": "C144",
+    "id": "./spec/models/fields/custom_field_pair_spec.rb[1:4:1]",
+    "description": "CustomFieldPair paired_with should return the 2nd field"
+  },
+  {
+    "case": "C145",
+    "id": "./spec/models/polymorphic/task_spec.rb[1:4:2]",
+    "description": "Task task.my? should match a task assigned to the user"
+  },
+  {
+    "case": "C146",
+    "id": "./spec/models/polymorphic/version_spec.rb[1:2:3]",
+    "description": "Version with multiple version records should include only destroy events"
+  },
+  {
+    "case": "C147",
+    "id": "./spec/models/setting_spec.rb[1:2]",
+    "description": "Setting should find existing setting by its name using [] or method notations, and cache settings"
+  },
+  {
+    "case": "C148",
+    "id": "./spec/models/users/user_spec.rb[1:3:1:1]",
+    "description": "User#destroyable? Destroying users with and without related assets should not destroy the user if she owns account"
+  },
+  {
+    "case": "C149",
+    "id": "./spec/models/users/user_spec.rb[1:7:1:2]",
+    "description": "User instance methods assigned_opportunities does not include opportunities assigned to another user"
+  },
+  {
+    "case": "C150",
+    "id": "./spec/requests/rack_attack_spec.rb[1:1:1:1]",
+    "description": "Rack::Attack throttle devise/ip when number of requests is under the limit returns 200 OK"
+  },
+  {
+    "case": "C151",
+    "id": "./spec/routing/accounts_routing_spec.rb[1:1:8]",
+    "description": "AccountsController routing recognizes and generates #update"
+  },
+  {
+    "case": "C152",
+    "id": "./spec/routing/accounts_routing_spec.rb[1:1:12]",
+    "description": "AccountsController routing recognizes and generates #auto_complete"
+  },
+  {
+    "case": "C153",
+    "id": "./spec/routing/admin/users_routing_spec.rb[1:1:2]",
+    "description": "Admin::UsersController routing recognizes and generates #new"
+  },
+  {
+    "case": "C154",
+    "id": "./spec/routing/opportunities_routing_spec.rb[1:1:9]",
+    "description": "OpportunitiesController routing doesn't recognize #update with non-numeric id"
+  },
+  {
+    "case": "C155",
+    "id": "./spec/routing/users_routing_spec.rb[1:1:3]",
+    "description": "UsersController routing recognizes and generates Devise sessions routes"
+  },
+  {
+    "case": "C156",
+    "id": "./spec/services/wikidata_service_spec.rb[1:2]",
+    "description": "WikidataService does not overwrite existing fields"
+  },
+  {
+    "case": "C157",
+    "id": "./spec/views/admin/users/edit.js.haml_spec.rb[1:2]",
+    "description": "admin/users/edit edit hides previously open [Edit User] and replaces it with user partial"
+  },
+  {
+    "case": "C158",
+    "id": "./spec/views/contacts/_edit.haml_spec.rb[1:2]",
+    "description": "contacts/_edit should pick default assignee (Myself)"
+  },
+  {
+    "case": "C159",
+    "id": "./spec/views/contacts/edit.js.haml_spec.rb[1:1]",
+    "description": "contacts/edit cancel from contact index page: should replace [Edit Contact] form with contact partial"
+  },
+  {
+    "case": "C160",
+    "id": "./spec/views/leads/convert.js.haml_spec.rb[1:4]",
+    "description": "leads/convert convert: should remove previously open [Convert Lead] if it's no longer available"
+  },
+  {
+    "case": "C161",
+    "id": "./spec/views/leads/update.js.haml_spec.rb[1:2:1:1]",
+    "description": "leads/update validation errors : on landing page - should redraw the [edit_lead] form"
+  },
+  {
+    "case": "C162",
+    "id": "./spec/views/leads/update.js.haml_spec.rb[1:2:3:1]",
+    "description": "leads/update validation errors : on related asset page - should redraw the [edit_lead] form"
+  },
+  {
+    "case": "C163",
+    "id": "./spec/views/opportunities/index.js.haml_spec.rb[1:2]",
+    "description": "opportunities/index should render [empty] template if @opportunities collection if there are no opportunities"
+  },
+  {
+    "case": "C164",
+    "id": "./spec/views/tasks/create.js.haml_spec.rb[1:7:2]",
+    "description": "tasks/create create from outside the Tasks tab should insert pending partial and highlight it"
+  },
+  {
+    "case": "C165",
+    "id": "./spec/views/tasks/create.js.haml_spec.rb[1:7:3]",
+    "description": "tasks/create create from outside the Tasks tab should update recently viewed items"
+  }
+]

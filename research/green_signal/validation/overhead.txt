@@ -1,0 +1,16 @@
+# Paired overhead runs (RSpec 'Finished in'), Ruby 3.4.4; gc = GC.stat at exit. App C = ffcrm, App D = hess.
+# hess baseline run=1 overlapped other runs on the same app and is excluded.
+hess baseline run=1 | Finished in 2 minutes 31.2 seconds | rss_kb=588504 | gc={"gc_time_ms" => 5677, "gc_count" => 113, "major" => 16, "allocated" => 37270120}
+hess observed run=1 | Finished in 2 minutes 7.5 seconds | rss_kb=617644 | gc={"gc_time_ms" => 5405, "gc_count" => 93, "major" => 19, "allocated" => 39877901}
+hess observed run=2 | Finished in 2 minutes 11.3 seconds | rss_kb=624644 | gc={"gc_time_ms" => 5730, "gc_count" => 104, "major" => 20, "allocated" => 39875765}
+hess baseline run=2 | Finished in 2 minutes 8.8 seconds | rss_kb=584488 | gc={"gc_time_ms" => 5275, "gc_count" => 114, "major" => 17, "allocated" => 37263569}
+ffcrm baseline run=1 | Finished in 2 minutes 12.8 seconds | rss_kb=510672 | gc={"gc_time_ms" => 4870, "gc_count" => 162, "major" => 14, "allocated" => 42945738}
+ffcrm observed run=1 | Finished in 2 minutes 20.4 seconds | rss_kb=530432 | gc={"gc_time_ms" => 5204, "gc_count" => 159, "major" => 13, "allocated" => 47838862}
+ffcrm observed run=2 | Finished in 2 minutes 34.8 seconds | rss_kb=553696 | gc={"gc_time_ms" => 5871, "gc_count" => 159, "major" => 14, "allocated" => 47845592}
+ffcrm baseline run=2 | Finished in 2 minutes 26.4 seconds | rss_kb=538144 | gc={"gc_time_ms" => 4493, "gc_count" => 152, "major" => 12, "allocated" => 42993907}
+
+# Observer callback costs (ms), from the observed runs:
+ffcrm-observed-1 "costs_ms":{"tracepoint":2927.5,"sql":852.4,"controller":160.0,"render":20.2,"expectation":319.5,"serialize":120.4,"job":3.7,"issue":1.3}
+ffcrm-observed-2 "costs_ms":{"tracepoint":3216.6,"sql":948.1,"controller":187.1,"render":22.6,"expectation":371.3,"serialize":128.0,"job":4.2,"issue":0.9}
+hess-observed-1 "costs_ms":{"sql":1290.8,"tracepoint":25.2,"issue":84.7,"controller":457.0,"expectation":1155.7,"serialize":68.0,"render":27.6,"job":0.6}
+hess-observed-2 "costs_ms":{"sql":1358.2,"tracepoint":29.6,"issue":77.9,"controller":452.9,"expectation":963.0,"serialize":70.8,"render":26.7,"job":0.5}

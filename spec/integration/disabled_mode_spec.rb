@@ -123,6 +123,7 @@ RSpec.describe "with relationships switched off", :integration do
 
   def normalize_json(data)
     data = data.reject { |key, _| %w[environment backtrace_reduction run_id].include?(key) }
+    data["generated_by"] = data["generated_by"].sub(/\d+\.\d+\.\d+\S*\z/, "[version]")
     data["summary"] = data["summary"].reject { |key, _| %w[duration_seconds seed].include?(key) }
     data["since_last_run"] = data["since_last_run"].reject { |key, _| key.start_with?("previous_run", "previous_at") } \
       if data["since_last_run"]

@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "generated_by": "rspec-signal 0.2.0",
+  "generated_by": "rspec-signal [version]",
   "summary": {
     "examples": 21,
     "failures": 8,

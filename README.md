@@ -176,13 +176,22 @@ Stdout is a tool call's return value, so stdout is the triage view — enough to
 whether to open the report at all:
 
 ```text
-2085 examples, 42 failures, 6 pending
-
-rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters (2767 backtrace frames omitted)
-Since last run: 28 resolved, 3 new, 14 still failing (42 -> 17 failures)
+RSpec totals: 2085 examples, 42 failures, 6 pending
+Signal problems: 42 failures, 35 distinct problems
+Problem #1 (9 failures): NoMethodError: undefined method `name' for nil:NilClass
+Exact rerun: bundle exec rspec './spec/models/reader_spec.rb[1:2:1]'
+Problem #2 (4 failures): KeyError: key not found: "API_URL"
+Exact rerun: bundle exec rspec './spec/api/serializer_spec.rb[1:1]'
+Problem #3 (3 failures): ActiveRecord::RecordInvalid: Validation failed: Email can't be blank
+Exact rerun: bundle exec rspec './spec/models/user_spec.rb[1:4:1]'
 Shared code paths: app/models/reader.rb:88 (9 signatures), app/api/serializer.rb:31 (4 signatures)
+Since last run: Signatures: 28 resolved, 3 new, 14 persistent; failures: 42 -> 17
 Report: tmp/rspec-signal/signal.md
 ```
+
+The summary leads with the result and the exact next action: totals, up to three
+problems, each with a command that reruns its representative example and nothing
+else, then supporting context. Everything else is in the artifacts.
 
 ```text
 RSpec runs the full suite
@@ -254,9 +263,11 @@ figures describe that run, not a universal benchmark. Its quiet terminal summary
 ended like this:
 
 ```text
-2085 examples, 42 failures, 6 pending
-
-rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters (2767 backtrace frames omitted)
+RSpec totals: 2085 examples, 42 failures, 6 pending across 8 workers
+Signal problems: 42 failures, 35 distinct problems
+Problem #1 (9 failures): NoMethodError: undefined method `name' for nil:NilClass
+Exact rerun: bundle exec rspec './spec/models/reader_spec.rb[1:2:1]'
+...
 Report: tmp/rspec-signal/signal.md
 ```
 
@@ -393,11 +404,13 @@ bundle exec rspec-signal --next-failure    # one at a time, in defined order
 An agent has no memory between turns. The tool has a filesystem, so it keeps one:
 
 ```text
-2085 examples, 42 failures, 6 pending
-
-rspec-signal: 42 failures in 35 distinct signatures, 4 related clusters
-Since last run: 28 resolved, 3 new, 14 still failing (42 -> 17 failures)
+RSpec totals: 2085 examples, 17 failures, 6 pending
+Signal problems: 17 failures, 12 distinct problems
+Problem #1 (9 failures): NoMethodError: undefined method `name' for nil:NilClass
+Exact rerun: bundle exec rspec './spec/models/reader_spec.rb[1:2:1]'
+...
 Shared code paths: app/models/reader.rb:88 (9 signatures)
+Since last run: Signatures: 28 resolved, 3 new, 14 persistent; failures: 42 -> 17
 Report: tmp/rspec-signal/signal.md
 ```
 
@@ -416,11 +429,29 @@ raises shifts every culprit line; without it, one such edit turns every persiste
 failure into a spurious resolved/new pair, and being told "28 resolved" when you
 resolved nothing is worse than being told nothing.
 
-`history.json` holds the last ten runs as **digests and counts only** — no messages,
-no paths, nothing the redactor exists to protect. A missing, unreadable or corrupt
+`history.json` holds the last ten runs as signature digests and counts, plus each run's
+selection (see below) — **no failure messages, backtraces or source**, nothing the
+redactor exists to protect. The selection is the normalized spec paths and filter
+values you passed to RSpec, such as `spec/models` or `--tag slow`, kept so a developer
+can tell why two runs did not compare. A missing, unreadable or corrupt
 history means the run has nothing to compare against, which is exactly how every run
 behaved before this existed. CI that discards `tmp/` simply gets no comparison, and
 needs no configuration to say so.
+
+**Runs are only compared with like runs.** Each run records its *selection*: the spec
+paths and filters (`--tag`, `-e`, `--pattern`, `--only-failures`, ...) it was asked to
+run. A run is compared with the most recent run of an equivalent selection, so a
+targeted rerun of one file is never measured against a full-suite run. A run that
+did not finish — a spec file that failed to load, an aborted run, fewer examples
+executed than selected — is neither compared nor recorded, and says so:
+
+```text
+Since last run: comparison skipped (run incomplete)
+```
+
+A first run of a given selection, or one whose selection has no earlier match, simply
+prints no "Since last run" line. Under `rspec-signal-parallel`, the workers' selections
+are merged and compared only when they all agree.
 
 ```ruby
 RSpec::Signal.configure { |config| config.track_history = false }

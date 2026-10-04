@@ -7,78 +7,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-03
+
+RSpec Signal now tells an agent what changed since the last run, gives it an exact
+command to rerun each problem, and refuses to leave a stale report behind. No
+configuration is required; every addition below is on by default except the
+experimental relationships layer.
+
 ### Added
 
-- **Relationships (experimental, off by default).** With `config.causal_analysis = true`,
-  a fourth layer relates *signatures* by structural evidence only: a `before(:context)`
-  exception object shared by every example, one underlying exception (bare or wrapped)
-  at one first-party line, a missing definition read from exception attributes (`ENV`
-  key, constant, method on a first-party class), or one failing setup step. Signatures
-  are grouped as CAUSAL (always HIGH), SCOPE (concentration in one file or `type:`; no
-  confidence, no cause wording) or INDEPENDENT (no relationship found), and every
-  failure is classified into exactly one group. Printed only when it adds something;
-  published as an `analysis` block in `signal.json` marked `"experimental": true`,
-  whose fields may change. Evaluated by a corpus of real runs in `spec/causal/`.
-- **Shared code paths.** A third analysis layer that reads the *stack* rather than
-  the message, and reports the first-party lines that more than one signature runs
-  through. This relates failures whose messages have nothing in common — a `KeyError`
-  and the `expect { }.not_to raise_error` that swallowed it — which no message-based
-  extractor can do. Two rules hold it back: only the innermost first-party frames
-  outside the spec suite are indexed (`config.code_path_depth`, default 5), and a
-  line is reported only when two or more distinct signatures cross it. It claims a
-  measured fact, never a cause. Configure with `config.max_code_paths`.
-- **Run-to-run comparison.** `tmp/rspec-signal/history.json` records the last ten
-  runs as signature digests and counts — no messages, no paths. Each run then reports
-  what changed: `28 resolved, 3 new, 14 still failing, 3 changed signature`. The
-  fourth bucket is what makes the rest trustworthy: an edit that only shifts line
-  numbers reads as *changed*, never as a fix. The history survives the green run that
-  deletes every other artifact. Turn it off with `config.track_history = false`.
+- **"Since last run" comparison.** `tmp/rspec-signal/history.json` records the last
+  ten runs as signature digests, counts and the run's selection. Each run then
+  reports what changed: `Signatures: 28 resolved, 3 new, 14 persistent, 3 changed; failures: 42 -> 17`.
+  The *changed signature* bucket keeps an edit that merely shifts line numbers from
+  reading as a fix. History survives the green run that clears the report, so
+  "42 failures became 0" is still reported. Disable with `config.track_history = false`.
+- **Comparisons only between like runs.** A run is compared with the most recent run
+  of an equivalent selection — same paths and filters (`--tag`, `-e`, `--pattern`,
+  `--only-failures`, ...). A targeted rerun of one file is never measured against a
+  full-suite run, and a full suite is never reported as "resolved" because a narrower
+  run came in between. Runs that did not finish — a load error, an aborted run, fewer
+  examples executed than selected — are neither compared nor recorded, and the
+  terminal says `Since last run: comparison skipped (run incomplete)` rather than
+  staying silent. `rspec-signal-parallel` merges its workers' selections and
+  compares only when they agree.
+- **Exact reruns.** Every signature carries a copy-pasteable `rerun` command that runs
+  its representative example and nothing else, plus `rerun_ids` for every affected
+  example. Commands name RSpec example ids (shell-quoted), not file:line locations,
+  which select every example defined on that line.
+- **Shared code paths.** Reports the first-party lines that more than one signature
+  runs through, found from the stack rather than the message — so a `KeyError` and
+  the `expect { }.not_to raise_error` that swallowed it are related. It claims a
+  measured fact, never a cause. Configure with `config.code_path_depth` and
+  `config.max_code_paths`.
 - **Errors outside examples are captured, not just counted.** A spec file that fails
-  to load, or a `before(:suite)` hook that blows up, now reaches the report with its
-  exception, message, reduced trace and a rerun command. Previously only a count was
-  possible. The formatter registers RSpec's `:message` notification and re-emits
-  anything no other formatter is listening for, so nothing is lost or duplicated.
-- Stdout in quiet mode is now a triage view: counts, what changed since the last run,
-  and the top shared code paths. Enough to decide whether to open the report.
-- `signal.json` gains `run_id`, `since_last_run`, `code_paths`, `outside_examples`,
-  and per-signature `summary`, `rerun`, `rerun_ids` and `loose_signature`. The
-  contract is documented in the README.
+  to load, or a `before(:suite)` hook that raises, now reaches the report with its
+  exception, message, reduced trace and a rerun command. A run whose only problem is
+  outside every example now writes a report.
+- **Experimental relationships (off by default).** With `config.causal_analysis = true`,
+  signatures are related by structural evidence only — a shared `before(:context)`
+  exception, one exception at one first-party line, a missing `ENV` key, constant or
+  method, or one failing setup step — and grouped as CAUSAL, SCOPE or INDEPENDENT.
+  Published in `signal.json` as an `analysis` block marked `"experimental": true`,
+  whose fields may change in any release.
+- **Quiet-mode progress line.** A quiet run shows one repainted progress line so a
+  long suite is distinguishable from a hang. It is drawn only on a terminal; redirected
+  output contains no control sequences.
+- `signal.json` is now `schema: 2` and adds `run_id`, `since_last_run`, `code_paths`,
+  `outside_examples`, and per-signature `summary`, `rerun`, `rerun_ids` and
+  `loose_signature`. Every schema 1 field keeps its name and meaning. The contract
+  is documented in the README.
+- `rspec-signal` and `rspec-signal-parallel` clear the previous `signal.md`,
+  `signal.json` and `full.txt` before RSpec boots, so even a run that aborts before
+  the formatter loads cannot leave an earlier run's report looking current. Set
+  `RSPEC_SIGNAL_DISABLE=1` to leave artifacts untouched, and
+  `RSPEC_SIGNAL_OUTPUT_DIR` when a custom directory needs this early guarantee.
 
 ### Changed
 
-- **RSpec's `Failure/Error:` source echo is no longer part of a signature.** When an
-  error is raised inside a gem -- a factory's `save!`, a driver call -- RSpec echoes
-  each example's own call site, so one broken factory used to become one signature per
-  `create` line. The echo is still shown; it just no longer decides identity.
-  Every digest changes once as a result, so `history.json` moves to schema 2 and an
-  older file is ignored: the first run after upgrading has no "since last run" line,
-  rather than reporting every signature as resolved and new.
-- **Rerun commands now name RSpec example ids rather than locations**, shell-quoted.
-  A location selects every example defined on that line, so the printed command could
-  rerun ten examples for a loop-generated `it`, and the *same* command could be
-  printed for two different signatures. Reruns are now exact. The human-readable
-  location remains on the `Example` line above.
-- The signature index shows the exception message rather than RSpec's
-  `Failure/Error:` source echo, which was identical on every row.
-- `signal.json` is `schema: 2`. Every schema 1 field keeps its name and meaning.
+- **The terminal summary is rewritten to lead with the next action.** It now reads
+  `RSpec totals`, `Signal problems`, the top three problems each with an `Exact rerun`
+  command, any outside-example errors, `Since last run`, and `Report:`. The old
+  `rspec-signal: N failures in N distinct signatures, ... (N backtrace frames omitted)`
+  line is gone, and `rspec-signal-parallel` prints the same summary as `rspec-signal`.
+  **Anything that parses the terminal text will need updating**; `signal.json` is the
+  stable interface.
+- **Reports are published atomically.** `signal.md`, `signal.json` and `full.txt` are
+  staged together and renamed into place with `signal.md` last, so `signal.md` is the
+  marker that its companions belong to the same completed run. A rendering failure
+  leaves no current report rather than a mixed one. `--dry-run` no longer deletes the
+  report written by the previous real run.
+- **RSpec's `Failure/Error:` source echo is no longer part of a signature.** A broken
+  factory used to become one signature per `create` call site; now it is one. The echo
+  is still shown, and the signature index shows the exception message instead.
+- `history.json` records the run's selection — normalized spec paths and filter
+  values — in addition to digests and counts. It still contains no failure messages,
+  backtraces or source.
 
 ### Fixed
 
-- In a parallel run, every signature's loose digest was derived from a placeholder
-  message, so signatures of the same exception class shared one loose key and the
-  changed-signature bucket could pair unrelated failures. Worker payloads now carry the
-  loose digest.
-- One error outside examples repeated across many spec files -- a helper every file
-  requires failing at boot -- rendered one identical section per file. It now renders once,
-  naming every file it stopped from loading.
-- `signal.json` ignored `max_message_lines` and `max_diff_lines`, so configuring
-  them changed `signal.md` and left the JSON at the built-in defaults.
+- In a parallel run, every signature's loose digest came from a placeholder message,
+  so unrelated failures of the same exception class could be paired as one *changed*
+  signature. Workers now carry the real digest.
+- One error outside examples repeated across many spec files — a helper every file
+  requires failing at boot — rendered one identical section per file. It now renders
+  once, naming every file it stopped from loading.
+- `signal.json` ignored `max_message_lines` and `max_diff_lines`; configuring them
+  changed `signal.md` and left the JSON at the built-in defaults.
 - The parallel merger dropped `shared_group_locations`, so the "Via shared example
   group" locator was missing from every parallel report.
-- A run whose only problem was outside every example wrote no report.
 - The terminal summary printed "0 failures" beside a report link when a spec file
   failed to load.
-- `--dry-run` deleted the report written by the previous real run.
+- A stale `signal.md` from a previous run could survive an aborted run or a failed
+  report write.
 
 ## [0.2.0] - 2026-08-27
 
@@ -156,6 +177,7 @@ Initial release.
 - Diff hunk headers and HTML summary sizes are normalized out of the fingerprint,
   so a page one line longer is no longer a different failure.
 
-[Unreleased]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/SilenceDogood1984/rspec-signal/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SilenceDogood1984/rspec-signal/releases/tag/v0.1.0
